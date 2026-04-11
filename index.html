@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- CRITICAL FOR MOBILE: Disables zooming and fits to screen -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Five Nights at Lux Vanguards</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Import the Three.js 3D Engine -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <!-- UI Overlay -->
+    <div id="ui-layer">
+        <div id="time-display">12:00 AM</div>
+        <div id="night-display">Night 1</div>
+        <div id="power-display">
+            Power Left: <span id="power-text">100</span>%<br>
+            Usage: <span id="usage-text">🔋</span>
+        </div>
+        
+        <!-- Mobile/Desktop Camera Button -->
+        <button id="camera-toggle">Open Monitor</button>
+    </div>
+
+    <!-- Camera System Overlay (Hidden by default) -->
+    <div id="camera-system" style="display: none;">
+        <div class="cam-screen">
+            <h2 id="cam-name">CAM 1A - Show Stage</h2>
+            <p id="cam-content" style="color:white;">notnoob, panda, Ben are here.</p>
+        </div>
+        <div class="cam-map">
+            <button class="cam-btn" onclick="switchCam(1)">CAM 1</button>
+            <button class="cam-btn" onclick="switchCam(2)">CAM 2</button>
+            <button class="cam-btn" onclick="switchCam(3)">CAM 3</button>
+        </div>
+    </div>
+
+    <!-- Jumpscare Screen -->
+    <div id="jumpscare-screen" style="display: none;"></div>
+
+    <script src="game.js"></script>
+</body>
+</html>
