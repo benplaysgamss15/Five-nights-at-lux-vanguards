@@ -1,44 +1,233 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <!-- CRITICAL FOR MOBILE: Disables zooming and fits to screen -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Five Nights at Lux Vanguards</title>
-    <link rel="stylesheet" href="style.css">
-    <!-- Import the Three.js 3D Engine -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Five Nights at Lux Vanguards</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <!-- UI Overlay -->
-    <div id="ui-layer">
-        <div id="time-display">12:00 AM</div>
-        <div id="night-display">Night 1</div>
-        <div id="power-display">
-            Power Left: <span id="power-text">100</span>%<br>
-            Usage: <span id="usage-text">🔋</span>
-        </div>
-        
-        <!-- Mobile/Desktop Camera Button -->
-        <button id="camera-toggle">Open Monitor</button>
+
+  <!-- ===================== MAIN MENU ===================== -->
+
+  <div id="menu-screen">
+    <div class="menu-content">
+      <h1 class="menu-title">FIVE NIGHTS AT<br><span class="title-accent">LUX VANGUARDS</span></h1>
+      <p class="menu-subtitle">Night 1</p>
+      <div class="menu-buttons">
+        <button id="btn-new-game" class="menu-btn">► NEW GAME</button>
+        <button id="btn-night-select" class="menu-btn secondary">SELECT NIGHT</button>
+        <button id="btn-exit" class="menu-btn secondary">EXIT</button>
+      </div>
+      <p class="menu-footer">Use mouse/touch to look around. Survive until 6 AM.</p>
+    </div>
+  </div>
+
+  <!-- ================= NIGHT SELECT MENU ================= -->
+
+  <div id="night-select-screen" style="display:none">
+    <div class="menu-content">
+      <h2 class="menu-title">SELECT NIGHT</h2>
+      <div class="night-buttons">
+        <button class="night-btn menu-btn" data-night="1">Night 1</button>
+        <button class="night-btn menu-btn" data-night="2">Night 2</button>
+        <button class="night-btn menu-btn" data-night="3">Night 3</button>
+        <button class="night-btn menu-btn" data-night="4">Night 4</button>
+        <button class="night-btn menu-btn" data-night="5">Night 5</button>
+        <button class="night-btn menu-btn" data-night="6">Night 6 ★</button>
+      </div>
+      <button id="btn-back-menu" class="menu-btn secondary" style="margin-top:20px">◄ BACK</button>
+    </div>
+  </div>
+
+  <!-- ==================== GAME CONTAINER ==================== -->
+
+  <div id="game-container" style="display:none">
+
+```
+<!-- THREE.JS CANVAS (appended by game.js) -->
+<div id="canvas-container"></div>
+
+<!-- ============= HUD (always visible during play) ============= -->
+<div id="hud">
+  <div id="hud-left">
+    <div id="power-display">
+      <span id="power-label">Power Left:</span>
+      <span id="power-value">100%</span>
+    </div>
+    <div id="power-bar-container">
+      <div id="power-bar-fill"></div>
+    </div>
+    <div id="usage-display">
+      Usage: <span id="usage-bars">|</span>
+    </div>
+  </div>
+  <div id="hud-right">
+    <div id="clock-display">12 AM</div>
+    <div id="night-display">Night 1</div>
+  </div>
+</div>
+
+<!-- ============= OFFICE DOOR & LIGHT BUTTONS ============= -->
+<div id="left-controls" class="door-controls">
+  <button id="btn-left-light" class="touch-btn light-btn" title="Left Light">
+    <span class="btn-icon">💡</span>
+    <span class="btn-label">LIGHT</span>
+  </button>
+  <button id="btn-left-door" class="touch-btn door-btn door-open" title="Left Door">
+    <span class="btn-icon">▉</span>
+    <span class="btn-label">DOOR</span>
+  </button>
+</div>
+
+<div id="right-controls" class="door-controls">
+  <button id="btn-right-door" class="touch-btn door-btn door-open" title="Right Door">
+    <span class="btn-icon">▉</span>
+    <span class="btn-label">DOOR</span>
+  </button>
+  <button id="btn-right-light" class="touch-btn light-btn" title="Right Light">
+    <span class="btn-icon">💡</span>
+    <span class="btn-label">LIGHT</span>
+  </button>
+</div>
+
+<!-- ============= CAMERA TOGGLE ============= -->
+<div id="camera-toggle-area">
+  <button id="btn-camera-toggle" class="touch-btn cam-toggle-btn">
+    <span class="btn-icon">📷</span>
+    <span class="btn-label">MONITOR</span>
+  </button>
+</div>
+
+<!-- ============= CAMERA MONITOR OVERLAY ============= -->
+<div id="camera-monitor" style="display:none">
+  <div id="monitor-inner">
+    <div id="camera-feed-wrapper">
+      <!-- THREE.JS renders here via render target; fallback canvas below -->
+      <canvas id="camera-render-canvas"></canvas>
+      <!-- CRT Effect Layers -->
+      <div id="crt-static"></div>
+      <div id="crt-scanlines"></div>
+      <div id="crt-vignette"></div>
+      <!-- Camera label -->
+      <div id="cam-label-display">CAM 1-1 — Show Stage</div>
+      <!-- Character indicator (shows name if visible) -->
+      <div id="cam-char-display"></div>
     </div>
 
-    <!-- Camera System Overlay (Hidden by default) -->
-    <div id="camera-system" style="display: none;">
-        <div class="cam-screen">
-            <h2 id="cam-name">CAM 1A - Show Stage</h2>
-            <p id="cam-content" style="color:white;">notnoob, panda, Ben are here.</p>
-        </div>
-        <div class="cam-map">
-            <button class="cam-btn" onclick="switchCam(1)">CAM 1</button>
-            <button class="cam-btn" onclick="switchCam(2)">CAM 2</button>
-            <button class="cam-btn" onclick="switchCam(3)">CAM 3</button>
-        </div>
+    <!-- Camera Map / Selection -->
+    <div id="camera-map-panel">
+      <div id="cam-map-title">CAMERA MAP</div>
+      <div id="cam-buttons-grid">
+        <!-- Populated by game.js -->
+      </div>
     </div>
+  </div>
 
-    <!-- Jumpscare Screen -->
-    <div id="jumpscare-screen" style="display: none;"></div>
+  <!-- Close monitor -->
+  <button id="btn-close-monitor" class="touch-btn">
+    <span>▼ LOWER MONITOR</span>
+  </button>
+</div>
 
-    <script src="game.js"></script>
+<!-- ============= LIGHT HALLWAY INDICATOR ============= -->
+<div id="left-hallway-indicator" class="hallway-indicator" style="display:none">
+  <div class="hallway-light-beam left-beam"></div>
+  <div id="left-hall-char" class="hall-char-label"></div>
+</div>
+<div id="right-hallway-indicator" class="hallway-indicator" style="display:none">
+  <div class="hallway-light-beam right-beam"></div>
+  <div id="right-hall-char" class="hall-char-label"></div>
+</div>
+
+<!-- ============= RANDOM GUY SPRINT WARNING ============= -->
+<div id="random-guy-warning" style="display:none">
+  <div class="warning-text">⚠ CLOSE THE LEFT DOOR! ⚠</div>
+  <div id="sprint-timer-bar"><div id="sprint-timer-fill"></div></div>
+</div>
+
+<!-- ============= LUX WARNING ============= -->
+<div id="lux-warning" style="display:none">
+  <div class="warning-text">RAISE THE MONITOR!</div>
+</div>
+
+<!-- ============= POWER OUT OVERLAY ============= -->
+<div id="power-out-screen" style="display:none">
+  <div id="power-out-inner">
+    <p id="power-out-text">POWER OUTAGE</p>
+    <p id="power-out-sub">♪ . . . . . ♪</p>
+  </div>
+</div>
+
+<!-- ============= JUMPSCARE OVERLAY ============= -->
+<div id="jumpscare-screen" style="display:none">
+  <div id="jumpscare-inner">
+    <!-- Placeholder art: coloured panel with character name -->
+    <!-- REPLACE: swap .jumpscare-face with actual jumpscare images per character -->
+    <div id="jumpscare-face">
+      <span id="jumpscare-char-name">!</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============= LUX CRASH SCREEN ============= -->
+<div id="lux-crash-screen" style="display:none">
+  <div id="crash-inner">
+    <p style="font-size:2em; color:#fff0">&#9608;&#9608;&#9608;&#9608;&#9608;</p>
+    <p>FATAL ERROR</p>
+    <p id="crash-countdown">Restarting in 5...</p>
+  </div>
+</div>
+
+<!-- ============= WIN SCREEN ============= -->
+<div id="win-screen" style="display:none">
+  <div class="end-screen-inner">
+    <h2>6 AM!</h2>
+    <p>You survived the night!</p>
+    <div class="end-stats" id="win-stats"></div>
+    <button class="menu-btn" id="btn-win-menu">MAIN MENU</button>
+    <button class="menu-btn" id="btn-next-night">NEXT NIGHT ►</button>
+  </div>
+</div>
+
+<!-- ============= LOSE SCREEN ============= -->
+<div id="lose-screen" style="display:none">
+  <div class="end-screen-inner">
+    <h2>GAME OVER</h2>
+    <p id="lose-message">You were got.</p>
+    <button class="menu-btn" id="btn-lose-retry">RETRY NIGHT</button>
+    <button class="menu-btn" id="btn-lose-menu">MAIN MENU</button>
+  </div>
+</div>
+
+<!-- ============= PAUSE MENU ============= -->
+<div id="pause-menu" style="display:none">
+  <div class="menu-content">
+    <h2 class="menu-title">PAUSED</h2>
+    <button id="btn-resume" class="menu-btn">► RESUME</button>
+    <button id="btn-quit-night" class="menu-btn secondary">QUIT TO MENU</button>
+  </div>
+</div>
+
+<!-- Pause trigger button (always on screen during play) -->
+<button id="btn-pause-toggle" class="hud-btn" title="Pause">⏸</button>
+```
+
+  </div><!-- end #game-container -->
+
+  <!-- ===================== SCRIPTS ===================== -->
+
+  <!--
+    Three.js r128 via CDN.
+    If you want a different version, update this URL.
+  -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <script src="ai.js"></script>
+
+  <script src="game.js"></script>
+
 </body>
 </html>
