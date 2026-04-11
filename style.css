@@ -1,0 +1,743 @@
+/* ================================================================
+   FIVE NIGHTS AT LUX VANGUARDS — style.css
+   Mobile-first, responsive. CRT & scanline effects included.
+   ================================================================ */
+
+/* ---------- RESET & BASE ---------- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --clr-bg:       #000;
+  --clr-panel:    #0a0a0a;
+  --clr-border:   #1a1a1a;
+  --clr-accent:   #c8160c;
+  --clr-accent2:  #e8a000;
+  --clr-text:     #d4c8a8;
+  --clr-dim:      #666;
+  --clr-power:    #00ff44;
+  --clr-door-on:  #cc3300;
+  --clr-light-on: #ffffaa;
+  --radius:       4px;
+  --touch-min:    56px;
+  --font-main:    'Courier New', Courier, monospace;
+}
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: var(--clr-bg);
+  font-family: var(--font-main);
+  color: var(--clr-text);
+  touch-action: none; /* Prevent default touch scroll/zoom */
+}
+
+/* ================================================================
+   MENU SCREENS
+   ================================================================ */
+#menu-screen,
+#night-select-screen {
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(ellipse at center, #1a0a0a 0%, #000 70%);
+  z-index: 1000;
+}
+
+.menu-content {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+.menu-title {
+  font-size: clamp(1.4rem, 5vw, 2.6rem);
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+  margin-bottom: 0.4rem;
+  text-transform: uppercase;
+  color: var(--clr-text);
+  text-shadow: 0 0 20px rgba(200,22,12,0.6);
+}
+
+.title-accent {
+  color: var(--clr-accent);
+  display: block;
+  font-size: 1.2em;
+  text-shadow: 0 0 30px rgba(200,22,12,0.9);
+}
+
+.menu-subtitle {
+  color: var(--clr-accent2);
+  margin-bottom: 2rem;
+  font-size: 0.9rem;
+  letter-spacing: 0.2em;
+}
+
+.menu-buttons { display: flex; flex-direction: column; gap: 0.8rem; width: 100%; max-width: 280px; }
+.night-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; max-width: 300px; }
+
+.menu-btn {
+  background: transparent;
+  border: 1px solid var(--clr-accent);
+  color: var(--clr-text);
+  font-family: var(--font-main);
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  min-height: var(--touch-min);
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+  text-transform: uppercase;
+}
+.menu-btn:hover, .menu-btn:active {
+  background: var(--clr-accent);
+  color: #fff;
+  box-shadow: 0 0 12px var(--clr-accent);
+}
+.menu-btn.secondary {
+  border-color: var(--clr-dim);
+  font-size: 0.85rem;
+}
+.menu-btn.secondary:hover, .menu-btn.secondary:active {
+  background: #333;
+  color: #fff;
+  box-shadow: none;
+}
+
+.night-btn { font-size: 0.85rem; padding: 0.6rem 0.8rem; min-height: 48px; }
+
+.menu-footer {
+  margin-top: 2rem;
+  font-size: 0.7rem;
+  color: var(--clr-dim);
+  max-width: 280px;
+  line-height: 1.5;
+}
+
+/* ================================================================
+   GAME CONTAINER
+   ================================================================ */
+#game-container {
+  position: fixed; inset: 0;
+  overflow: hidden;
+}
+
+#canvas-container {
+  position: absolute; inset: 0;
+}
+#canvas-container canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* ================================================================
+   HUD
+   ================================================================ */
+#hud {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 0.5rem 0.75rem 0.75rem;
+  pointer-events: none;
+  z-index: 10;
+}
+
+#hud-left { display: flex; flex-direction: column; gap: 2px; }
+#hud-right { text-align: right; }
+
+#power-display {
+  font-size: clamp(0.65rem, 2.5vw, 0.85rem);
+  display: flex; gap: 0.5rem; align-items: center;
+}
+#power-label { color: var(--clr-dim); }
+#power-value { color: var(--clr-power); font-weight: bold; }
+
+#power-bar-container {
+  width: clamp(80px, 18vw, 140px);
+  height: 6px;
+  background: #1a1a1a;
+  border: 1px solid #333;
+}
+#power-bar-fill {
+  height: 100%;
+  width: 100%;
+  background: var(--clr-power);
+  transition: width 0.5s, background 0.5s;
+}
+#power-bar-fill.warn { background: var(--clr-accent2); }
+#power-bar-fill.danger { background: var(--clr-accent); }
+
+#usage-display {
+  font-size: 0.65rem;
+  color: var(--clr-dim);
+}
+#usage-bars {
+  color: var(--clr-accent2);
+  letter-spacing: 2px;
+}
+
+#clock-display {
+  font-size: clamp(1.1rem, 4vw, 1.6rem);
+  color: var(--clr-text);
+  letter-spacing: 0.1em;
+}
+#night-display {
+  font-size: 0.65rem;
+  color: var(--clr-dim);
+  text-align: right;
+}
+
+/* ================================================================
+   TOUCH BUTTONS (Door, Light, Camera)
+   ================================================================ */
+.touch-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: var(--touch-min);
+  min-height: var(--touch-min);
+  padding: 0.4rem 0.5rem;
+  border: 2px solid #333;
+  background: rgba(10,10,10,0.85);
+  color: var(--clr-text);
+  font-family: var(--font-main);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  text-transform: uppercase;
+  border-radius: var(--radius);
+  transition: all 0.1s;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.touch-btn .btn-icon { font-size: 1.2rem; line-height: 1; }
+.touch-btn .btn-label { font-size: 0.55rem; }
+.touch-btn:active { transform: scale(0.93); }
+
+/* Door buttons */
+.door-btn { border-color: #cc3300; color: #cc3300; }
+.door-btn.door-closed {
+  background: rgba(180, 30, 0, 0.4);
+  border-color: #ff6644;
+  color: #ff8866;
+  box-shadow: 0 0 8px rgba(200,50,0,0.5);
+}
+
+/* Light buttons */
+.light-btn { border-color: #555; color: #aaa; }
+.light-btn.light-on {
+  background: rgba(255,255,180,0.15);
+  border-color: var(--clr-light-on);
+  color: var(--clr-light-on);
+  box-shadow: 0 0 10px rgba(255,255,100,0.4);
+}
+
+/* Door + Light panels - fixed to left and right edges */
+.door-controls {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: 20;
+}
+#left-controls  { left: 0.4rem; }
+#right-controls { right: 0.4rem; }
+
+/* Camera toggle */
+#camera-toggle-area {
+  position: absolute;
+  bottom: 4rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+}
+.cam-toggle-btn {
+  min-width: 80px;
+  background: rgba(0,0,0,0.85);
+  border-color: #444;
+}
+.cam-toggle-btn.active {
+  border-color: var(--clr-accent2);
+  color: var(--clr-accent2);
+  box-shadow: 0 0 10px rgba(230,160,0,0.5);
+}
+
+/* Pause button */
+#btn-pause-toggle {
+  position: absolute;
+  top: 0.5rem; right: 0.5rem;
+  z-index: 30;
+  background: rgba(0,0,0,0.6);
+  border: 1px solid #333;
+  color: var(--clr-dim);
+  font-size: 1.1rem;
+  width: 40px; height: 40px;
+  cursor: pointer;
+  border-radius: var(--radius);
+}
+
+/* ================================================================
+   CAMERA MONITOR
+   ================================================================ */
+#camera-monitor {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.92);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0.5rem;
+  gap: 0.5rem;
+}
+
+#monitor-inner {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 640px;
+  gap: 0.5rem;
+  flex: 1;
+  overflow: hidden;
+}
+
+#camera-feed-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4/3;
+  background: #111;
+  border: 2px solid #333;
+  overflow: hidden;
+  border-radius: var(--radius);
+  flex-shrink: 0;
+}
+
+#camera-render-canvas {
+  width: 100%; height: 100%;
+  display: block;
+}
+
+/* CRT overlay layers */
+#crt-static {
+  position: absolute; inset: 0;
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAMAAAAp4XiDAAADAFBMVEUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+  opacity: 0.04;
+  mix-blend-mode: screen;
+  animation: staticNoise 0.08s steps(1) infinite;
+  pointer-events: none;
+}
+
+#crt-scanlines {
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.35) 2px,
+    rgba(0,0,0,0.35) 4px
+  );
+  pointer-events: none;
+}
+
+#crt-vignette {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center,
+    transparent 55%,
+    rgba(0,0,0,0.7) 100%
+  );
+  pointer-events: none;
+}
+
+#cam-label-display {
+  position: absolute;
+  top: 0.4rem; left: 0.5rem;
+  font-size: 0.65rem;
+  color: rgba(255,255,200,0.7);
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 4px rgba(255,255,0,0.5);
+  pointer-events: none;
+}
+
+#cam-char-display {
+  position: absolute;
+  bottom: 0.4rem; right: 0.5rem;
+  font-size: 0.6rem;
+  color: rgba(255,180,180,0.8);
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 4px rgba(255,50,50,0.7);
+  pointer-events: none;
+}
+
+/* Camera map panel */
+#camera-map-panel {
+  background: rgba(5,5,5,0.95);
+  border: 1px solid #222;
+  border-radius: var(--radius);
+  padding: 0.5rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+#cam-map-title {
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  color: var(--clr-dim);
+  margin-bottom: 0.4rem;
+  text-align: center;
+}
+
+#cam-buttons-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 0.35rem;
+}
+
+.cam-select-btn {
+  background: #0a0a0a;
+  border: 1px solid #2a2a2a;
+  color: #888;
+  font-family: var(--font-main);
+  font-size: 0.58rem;
+  padding: 0.4rem 0.3rem;
+  cursor: pointer;
+  text-align: left;
+  min-height: 48px;
+  border-radius: 2px;
+  line-height: 1.3;
+  transition: all 0.1s;
+}
+.cam-select-btn:hover, .cam-select-btn.active {
+  border-color: var(--clr-accent2);
+  color: var(--clr-accent2);
+  background: rgba(200,160,0,0.08);
+}
+.cam-select-btn .cam-id {
+  display: block;
+  color: inherit;
+  font-size: 0.65rem;
+  font-weight: bold;
+}
+.cam-select-btn .cam-name {
+  display: block;
+  color: #555;
+  font-size: 0.5rem;
+}
+
+/* Close monitor button */
+#btn-close-monitor {
+  min-height: 48px;
+  width: 100%;
+  max-width: 640px;
+  background: rgba(10,10,10,0.9);
+  border: 1px solid #333;
+  color: var(--clr-dim);
+  font-family: var(--font-main);
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+#btn-close-monitor:hover { border-color: #666; color: #aaa; }
+
+/* ================================================================
+   HALLWAY LIGHT INDICATORS
+   ================================================================ */
+.hallway-indicator {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 90px;
+  pointer-events: none;
+  z-index: 15;
+}
+#left-hallway-indicator  { left: 0; }
+#right-hallway-indicator { right: 0; }
+
+.hallway-light-beam {
+  position: absolute; top: 0; bottom: 0; width: 100%;
+}
+.left-beam {
+  background: linear-gradient(to right, rgba(255,255,180,0.15) 0%, transparent 100%);
+}
+.right-beam {
+  background: linear-gradient(to left, rgba(255,255,180,0.15) 0%, transparent 100%);
+}
+
+.hall-char-label {
+  position: absolute;
+  top: 40%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.55rem;
+  color: rgba(255,200,200,0.85);
+  text-align: center;
+  line-height: 1.4;
+  text-shadow: 0 0 6px rgba(255,0,0,0.6);
+  letter-spacing: 0.05em;
+}
+
+/* ================================================================
+   WARNING OVERLAYS
+   ================================================================ */
+.warning-text {
+  font-size: clamp(0.9rem, 3vw, 1.3rem);
+  color: #ff4400;
+  text-align: center;
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 15px rgba(255,68,0,0.8);
+  animation: warningPulse 0.5s ease-in-out infinite alternate;
+}
+
+#random-guy-warning {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  padding: 0.5rem;
+  background: rgba(100,0,0,0.4);
+  z-index: 40;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+
+#sprint-timer-bar {
+  width: 80%; max-width: 300px;
+  height: 8px;
+  background: #300;
+  border: 1px solid #600;
+}
+#sprint-timer-fill {
+  height: 100%;
+  width: 100%;
+  background: #ff2200;
+  transition: width linear;
+}
+
+#lux-warning {
+  position: absolute;
+  inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.5);
+  z-index: 45;
+  animation: luxFlicker 0.15s steps(1) infinite;
+}
+
+/* ================================================================
+   POWER OUT
+   ================================================================ */
+#power-out-screen {
+  position: absolute; inset: 0;
+  background: #000;
+  z-index: 60;
+  display: flex; align-items: center; justify-content: center;
+}
+#power-out-inner { text-align: center; }
+#power-out-text {
+  font-size: 1.5rem;
+  color: #300;
+  letter-spacing: 0.3em;
+  animation: flicker 2s ease-in-out infinite;
+}
+#power-out-sub {
+  margin-top: 1rem;
+  font-size: 1rem;
+  color: #400;
+  animation: musicBox 1.8s ease-in-out infinite;
+}
+
+/* ================================================================
+   JUMPSCARE
+   ================================================================ */
+#jumpscare-screen {
+  position: absolute; inset: 0;
+  z-index: 90;
+  background: #000;
+  display: flex; align-items: center; justify-content: center;
+  animation: jumpscareFlash 0.08s steps(1) 3;
+}
+
+#jumpscare-inner {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/*
+  REPLACE: Replace #jumpscare-face background-color per character
+  with actual jumpscare images:
+    #jumpscare-screen[data-char="ben"]       { background-image: url('assets/jumpscare_ben.png'); }
+    #jumpscare-screen[data-char="panda"]     { background-image: url('assets/jumpscare_panda.png'); }
+    #jumpscare-screen[data-char="notnoob"]   { background-image: url('assets/jumpscare_notnoob.png'); }
+    #jumpscare-screen[data-char="randomGuy"] { background-image: url('assets/jumpscare_randomguy.png'); }
+    #jumpscare-screen[data-char="lux"]       { background-image: url('assets/jumpscare_lux.png'); }
+*/
+#jumpscare-face {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(3rem, 15vw, 8rem);
+  font-weight: bold;
+  color: #fff;
+  background: #8b0000; /* placeholder */
+  transition: background 0s;
+}
+#jumpscare-screen[data-char="ben"]       #jumpscare-face { background: #4b0082; }
+#jumpscare-screen[data-char="panda"]     #jumpscare-face { background: #8b4000; }
+#jumpscare-screen[data-char="notnoob"]   #jumpscare-face { background: #003366; }
+#jumpscare-screen[data-char="randomGuy"] #jumpscare-face { background: #005500; }
+#jumpscare-screen[data-char="lux"]       #jumpscare-face { background: #6b6b00; }
+
+#jumpscare-char-name {
+  /* Large character name as placeholder — replace with <img> tag */
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  text-shadow: 0 0 30px rgba(255,255,255,0.5);
+}
+
+/* ================================================================
+   LUX CRASH SCREEN
+   ================================================================ */
+#lux-crash-screen {
+  position: absolute; inset: 0;
+  background: #000;
+  z-index: 95;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-main);
+  color: #fff;
+  text-align: center;
+}
+#crash-inner { padding: 2rem; }
+#crash-inner p { margin: 0.5rem 0; font-size: 0.9rem; color: #aaa; }
+#crash-countdown { color: #ff4444; font-size: 1rem; }
+
+/* ================================================================
+   WIN / LOSE SCREENS
+   ================================================================ */
+#win-screen, #lose-screen {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.92);
+  z-index: 80;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.end-screen-inner {
+  text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 1rem;
+  padding: 2rem;
+}
+.end-screen-inner h2 {
+  font-size: clamp(2rem, 8vw, 3.5rem);
+  letter-spacing: 0.15em;
+}
+#win-screen .end-screen-inner h2 { color: var(--clr-accent2); text-shadow: 0 0 20px rgba(200,160,0,0.8); }
+#lose-screen .end-screen-inner h2 { color: var(--clr-accent); text-shadow: 0 0 20px rgba(200,20,0,0.8); }
+.end-screen-inner p { color: var(--clr-dim); font-size: 0.9rem; }
+.end-stats { font-size: 0.75rem; color: var(--clr-dim); line-height: 1.8; }
+
+/* ================================================================
+   PAUSE MENU
+   ================================================================ */
+#pause-menu {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 70;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ================================================================
+   STATIC NOISE ANIMATION (CRT)
+   ================================================================ */
+@keyframes staticNoise {
+  0%   { transform: translate(0, 0); }
+  10%  { transform: translate(-2px, 1px); }
+  20%  { transform: translate(2px, -1px); }
+  30%  { transform: translate(-1px, 2px); }
+  40%  { transform: translate(1px, -2px); }
+  50%  { transform: translate(-2px, -1px); }
+  60%  { transform: translate(0px, 2px); }
+  70%  { transform: translate(2px, 1px); }
+  80%  { transform: translate(-1px, -2px); }
+  90%  { transform: translate(1px, 0px); }
+  100% { transform: translate(0, 0); }
+}
+
+@keyframes warningPulse {
+  from { opacity: 0.7; }
+  to   { opacity: 1; text-shadow: 0 0 25px rgba(255,68,0,1); }
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 0.1; }
+  50%       { opacity: 0.25; }
+}
+
+@keyframes musicBox {
+  0%   { letter-spacing: 0.1em; opacity: 0.4; }
+  50%  { letter-spacing: 0.4em; opacity: 0.7; }
+  100% { letter-spacing: 0.1em; opacity: 0.4; }
+}
+
+@keyframes luxFlicker {
+  0%, 100% { opacity: 1; }
+  49%       { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+@keyframes jumpscareFlash {
+  0%   { filter: brightness(3) saturate(0); }
+  50%  { filter: brightness(1); }
+  100% { filter: brightness(1); }
+}
+
+/* ================================================================
+   RESPONSIVE ADJUSTMENTS
+   ================================================================ */
+
+/* Tablet / landscape */
+@media (min-width: 600px) {
+  .door-controls { gap: 0.75rem; }
+  .touch-btn { min-width: 64px; min-height: 64px; }
+  .touch-btn .btn-icon { font-size: 1.5rem; }
+  .touch-btn .btn-label { font-size: 0.6rem; }
+  #clock-display { font-size: 1.8rem; }
+
+  #monitor-inner {
+    flex-direction: row;
+    max-width: 900px;
+    max-height: calc(100vh - 120px);
+  }
+  #camera-feed-wrapper {
+    flex: 1;
+    aspect-ratio: unset;
+    height: 100%;
+  }
+  #camera-map-panel {
+    width: 180px;
+    flex: 0 0 180px;
+  }
+  #cam-buttons-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Desktop */
+@media (min-width: 900px) {
+  .door-controls { gap: 1rem; }
+  .touch-btn { min-width: 72px; min-height: 72px; font-size: 0.65rem; }
+  #left-controls  { left: 1rem; }
+  #right-controls { right: 1rem; }
+
+  #camera-monitor { padding: 1rem; }
+  #camera-map-panel { width: 200px; flex: 0 0 200px; }
+  .cam-select-btn { font-size: 0.62rem; padding: 0.5rem 0.4rem; }
+  .cam-select-btn .cam-id { font-size: 0.7rem; }
+}
+
+/* Very small phones */
+@media (max-width: 360px) {
+  .touch-btn { min-width: 48px; min-height: 48px; }
+  .touch-btn .btn-icon { font-size: 1rem; }
+  .touch-btn .btn-label { display: none; }
+  #left-controls  { left: 0.2rem; }
+  #right-controls { right: 0.2rem; }
+}
