@@ -608,97 +608,114 @@ luxEl.style.display = (GS.luxState === 0) ? ‘flex’ : ‘none’;
 /* ================================================================
 UI EVENT HANDLERS
 ================================================================ */
+
+/**
+
+- Mobile-safe tap helper — fires on touchend (instant, no 300ms delay)
+- with a click fallback for desktop. Prevents ghost double-fires.
+  */
+  function _tap(idOrEl, handler) {
+  const el = typeof idOrEl === ‘string’
+  ? document.getElementById(idOrEl)
+  : idOrEl;
+  if (!el) return;
+  let lastTouch = 0;
+  el.addEventListener(‘touchend’, (e) => {
+  e.preventDefault();
+  lastTouch = Date.now();
+  handler(e);
+  }, { passive: false });
+  el.addEventListener(‘click’, (e) => {
+  if (Date.now() - lastTouch < 500) return; // skip ghost click after touchend
+  handler(e);
+  });
+  }
+
 function bindUIEvents() {
 const GS = GameLogic.GameState;
 
 /* –– Left door –– */
-document.getElementById(‘btn-left-door’).addEventListener(‘click’, () => {
+_tap(‘btn-left-door’, () => {
 if (!GS.gameRunning || GS.gameOver || GS.isPowerOut) return;
 GS.leftDoorClosed = !GS.leftDoorClosed;
 _syncDoorBtn(‘left’, GS.leftDoorClosed);
 });
 
 /* –– Right door –– */
-document.getElementById(‘btn-right-door’).addEventListener(‘click’, () => {
+_tap(‘btn-right-door’, () => {
 if (!GS.gameRunning || GS.gameOver || GS.isPowerOut) return;
 GS.rightDoorClosed = !GS.rightDoorClosed;
 _syncDoorBtn(‘right’, GS.rightDoorClosed);
 });
 
 /* –– Left light –– */
-document.getElementById(‘btn-left-light’).addEventListener(‘click’, () => {
+_tap(‘btn-left-light’, () => {
 if (!GS.gameRunning || GS.gameOver || GS.isPowerOut) return;
 GS.leftLightOn = !GS.leftLightOn;
 _syncLightBtn(‘left’, GS.leftLightOn);
 });
 
 /* –– Right light –– */
-document.getElementById(‘btn-right-light’).addEventListener(‘click’, () => {
+_tap(‘btn-right-light’, () => {
 if (!GS.gameRunning || GS.gameOver || GS.isPowerOut) return;
 GS.rightLightOn = !GS.rightLightOn;
 _syncLightBtn(‘right’, GS.rightLightOn);
 });
 
 /* –– Camera toggle –– */
-document.getElementById(‘btn-camera-toggle’).addEventListener(‘click’, () => {
+_tap(‘btn-camera-toggle’, () => {
 if (!GS.gameRunning || GS.gameOver || GS.isPowerOut) return;
 _openMonitor();
 });
 
-document.getElementById(‘btn-close-monitor’).addEventListener(‘click’, () => {
+_tap(‘btn-close-monitor’, () => {
 _closeMonitor();
 });
 
 /* –– Pause –– */
-document.getElementById(‘btn-pause-toggle’).addEventListener(‘click’, () => {
+_tap(‘btn-pause-toggle’, () => {
 if (!GS.gameRunning && !GS.gameOver) return;
 _showPauseMenu();
 });
-document.getElementById(‘btn-resume’).addEventListener(‘click’, () => {
+_tap(‘btn-resume’, () => {
 _hidePauseMenu();
 GS.gameRunning = true;
-lastFrameMs = Date.now(); // reset delta to avoid spike
+lastFrameMs = Date.now();
 });
-document.getElementById(‘btn-quit-night’).addEventListener(‘click’, () => {
+_tap(‘btn-quit-night’, () => {
 _hidePauseMenu();
 _endGame();
 showMainMenu();
 });
 
 /* –– Win/Lose screen buttons –– */
-document.getElementById(‘btn-win-menu’).addEventListener(‘click’, showMainMenu);
-document.getElementById(‘btn-lose-menu’).addEventListener(‘click’, showMainMenu);
-document.getElementById(‘btn-lose-retry’).addEventListener(‘click’, () => {
-_hideAllGameScreens();
-_startNight(GS.night);
-});
-document.getElementById(‘btn-next-night’).addEventListener(‘click’, () => {
-_hideAllGameScreens();
-_startNight(GS.night + 1);
-});
+_tap(‘btn-win-menu’,   showMainMenu);
+_tap(‘btn-lose-menu’,  showMainMenu);
+_tap(‘btn-lose-retry’, () => { _hideAllGameScreens(); _startNight(GS.night); });
+_tap(‘btn-next-night’, () => { _hideAllGameScreens(); _startNight(GS.night + 1); });
 
 /* –– Menu buttons –– */
-document.getElementById(‘btn-new-game’).addEventListener(‘click’, () => {
+_tap(‘btn-new-game’, () => {
 document.getElementById(‘menu-screen’).style.display = ‘none’;
 _startNight(1);
 });
-document.getElementById(‘btn-night-select’).addEventListener(‘click’, () => {
-document.getElementById(‘menu-screen’).style.display   = ‘none’;
+_tap(‘btn-night-select’, () => {
+document.getElementById(‘menu-screen’).style.display        = ‘none’;
 document.getElementById(‘night-select-screen’).style.display = ‘flex’;
 });
-document.getElementById(‘btn-back-menu’).addEventListener(‘click’, () => {
+_tap(‘btn-back-menu’, () => {
 document.getElementById(‘night-select-screen’).style.display = ‘none’;
-document.getElementById(‘menu-screen’).style.display          = ‘flex’;
+document.getElementById(‘menu-screen’).style.display         = ‘flex’;
 });
 document.querySelectorAll(’.night-btn’).forEach(btn => {
-btn.addEventListener(‘click’, () => {
+_tap(btn, () => {
 const night = parseInt(btn.dataset.night, 10);
 document.getElementById(‘night-select-screen’).style.display = ‘none’;
 _startNight(night);
 });
 });
-document.getElementById(‘btn-exit’).addEventListener(‘click’, () => {
-window.close(); // works when opened via script; otherwise redirects
+_tap(‘btn-exit’, () => {
+window.close();
 window.location.href = ‘about:blank’;
 });
 
@@ -714,7 +731,7 @@ const btn = document.createElement(‘button’);
 btn.className = ‘cam-select-btn’;
 btn.dataset.camIndex = i;
 btn.innerHTML = `<span class="cam-id">${cam.id}</span><span class="cam-name">${cam.label}</span>`;
-btn.addEventListener(‘click’, () => _switchCam(i));
+_tap(btn, () => _switchCam(i));
 grid.appendChild(btn);
 });
 }
