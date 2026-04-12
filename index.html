@@ -3,68 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Five Nights 2D Web Edition</title>
+    <title>Five Nights: 2D Web Edition</title>
     <style>
         /* Base Styling & Mobile Optimization */
         * { box-sizing: border-box; font-family: 'Courier New', Courier, monospace; user-select: none; }
         body { margin: 0; padding: 0; background-color: #000; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; touch-action: none; color: white; }
         
         /* Game Container (16:9 Aspect Ratio) */
-        #game-container { position: relative; width: 100vw; max-width: 1200px; aspect-ratio: 16/9; background-color: #111; border: 2px solid #333; overflow: hidden; box-shadow: 0 0 20px #000 inset; }
+        #game-container { position: relative; width: 100vw; max-width: 1200px; aspect-ratio: 16/9; background-color: #111; overflow: hidden; border: 2px solid #333; }
 
         /* Office Room */
         .room { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; }
         .active { display: block; }
         
-        #office { background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%); }
-        .desk { position: absolute; bottom: 0; left: 20%; width: 60%; height: 35%; background: #222; border-top: 5px solid #444; text-align: center; font-size: 2vw; padding-top: 2%; color: #555; }
-        
-        /* Doors */
-        .doorway { position: absolute; top: 10%; width: 15%; height: 60%; background: #000; border: 3px solid #333; }
+        #office { background: linear-gradient(to bottom, #2b2b2b 0%, #0a0a0a 100%); }
+        .desk { position: absolute; bottom: -10%; left: 15%; width: 70%; height: 40%; background: linear-gradient(to bottom, #5c4033, #2d1e16); border-top: 8px solid #222; text-align: center; font-size: 2vw; padding-top: 2%; color: #999; box-shadow: 0 -10px 30px rgba(0,0,0,0.8); z-index: 5; }
+        .fan { position: absolute; top: 10%; left: 45%; width: 10%; height: 20%; background: radial-gradient(circle, #888, #333); border-radius: 50%; animation: spin 0.2s linear infinite; box-shadow: 0 0 10px #000; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* Doorways & Lights */
+        .doorway { position: absolute; top: 5%; width: 18%; height: 65%; background: #050505; border: 5px solid #222; border-bottom: none; overflow: hidden; }
         .doorway.left { left: 5%; }
         .doorway.right { right: 5%; }
-        .door { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #444; border: 2px solid #666; transform: translateY(-100%); transition: transform 0.2s ease-in; z-index: 10; }
+        
+        .light-reveal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transition: background 0.2s; }
+        .light-on { background: radial-gradient(circle at 50% 50%, #fff9c4, #4a4528); }
+
+        /* Sliding Doors */
+        .door { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: repeating-linear-gradient(45deg, #444, #444 10px, #333 10px, #333 20px); border-bottom: 20px solid #d35400; transform: translateY(-100%); transition: transform 0.3s ease-in; z-index: 10; box-shadow: inset 0 -10px 20px #000; }
         .door.closed { transform: translateY(0); }
 
-        /* Animatronics in Doorways */
-        .door-animatronic { position: absolute; bottom: 0; left: 10%; width: 80%; height: 80%; opacity: 0; font-size: 5vw; text-align: center; }
+        /* Animatronics at the Door */
+        .door-module { position: absolute; bottom: 0; left: 10%; width: 80%; height: 80%; opacity: 0; display: flex; align-items: flex-end; justify-content: center; transition: opacity 0.2s; pointer-events: none; }
+        .light-on .door-module { opacity: 1; }
 
         /* Buttons */
-        .control-panel { position: absolute; top: 30%; width: 8%; height: 30%; display: flex; flex-direction: column; justify-content: space-around; align-items: center; }
-        .control-panel.left { left: 21%; }
-        .control-panel.right { right: 21%; }
-        .btn { width: 80%; aspect-ratio: 1; border-radius: 5px; border: 2px solid white; cursor: pointer; font-weight: bold; font-size: 1.2vw; display: flex; justify-content: center; align-items: center; background: #333; color: white; }
-        .btn.active-door { background: #e74c3c; box-shadow: 0 0 10px #e74c3c; }
-        .btn.active-light { background: #f1c40f; box-shadow: 0 0 10px #f1c40f; color: black; }
-        
-        /* Camera UI */
-        #camera-system { background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4"><rect width="4" height="4" fill="%23111"/><rect width="2" height="2" fill="%23222"/></svg>'); z-index: 20; border: 5px solid #555; }
-        #cam-view { position: absolute; top: 5%; left: 5%; width: 60%; height: 75%; border: 2px solid white; background: #000; display: flex; justify-content: center; align-items: center; font-size: 5vw; flex-direction: column; }
-        #cam-name { position: absolute; top: 5%; left: 5%; font-size: 2vw; background: rgba(0,0,0,0.7); padding: 5px; }
-        
-        .map { position: absolute; bottom: 10%; right: 5%; width: 30%; height: 60%; background: rgba(0,0,0,0.8); border: 2px solid white; padding: 2%; display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
-        .cam-btn { background: #333; border: 1px solid white; color: white; cursor: pointer; font-size: 1.5vw; }
-        .cam-btn.active { background: #2ecc71; color: black; }
-        
-        /* Main Bottom Buttons */
-        .bottom-bar { position: absolute; bottom: 2%; left: 35%; width: 30%; height: 10%; display: flex; justify-content: center; z-index: 30; }
-        .toggle-cam-btn { width: 100%; background: rgba(255, 255, 255, 0.2); border: 2px solid white; color: white; font-size: 1.5vw; cursor: pointer; border-radius: 10px; transition: 0.2s; }
-        .toggle-cam-btn:hover, .toggle-cam-btn:active { background: rgba(255, 255, 255, 0.5); }
+        .control-panel { position: absolute; top: 25%; width: 6%; height: 35%; display: flex; flex-direction: column; justify-content: space-around; align-items: center; background: #222; border: 2px solid #111; padding: 5px 0; border-radius: 5px; }
+        .control-panel.left { left: 24%; }
+        .control-panel.right { right: 24%; }
+        .btn { width: 80%; aspect-ratio: 1; border-radius: 50%; border: 3px solid #555; cursor: pointer; font-weight: bold; font-size: 0.8vw; display: flex; justify-content: center; align-items: center; background: #111; color: white; transition: 0.2s; }
+        .btn.door-btn:active { transform: scale(0.9); }
+        .btn.light-btn:active { transform: scale(0.9); }
+        .btn.active-door { background: #e74c3c; border-color: #ff9999; box-shadow: 0 0 15px #e74c3c; }
+        .btn.active-light { background: #f1c40f; border-color: #ffffcc; box-shadow: 0 0 15px #f1c40f; color: black; }
 
-        /* UI Stats */
+        /* CAMERA SYSTEM - Panning Logic */
+        #camera-system { background: #000; z-index: 20; }
+        .crt-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06)); background-size: 100% 2px, 3px 100%; z-index: 25; pointer-events: none; opacity: 0.6; }
+        
+        #cam-viewport { position: absolute; top: 5%; left: 5%; width: 60%; height: 75%; border: 4px solid #fff; overflow: hidden; background: #111; box-shadow: 0 0 20px rgba(255,255,255,0.2); }
+        
+        /* The world inside the camera that actually moves */
+        #cam-world { position: absolute; top: 0; left: 0; width: 150%; height: 100%; animation: panAnim 10s ease-in-out infinite alternate; background-size: cover; }
+        
+        @keyframes panAnim { 0% { transform: translateX(0%); } 100% { transform: translateX(-33.33%); } }
+
+        /* Specific Camera Room Backgrounds */
+        .bg-1A { background: linear-gradient(to bottom, #1a0a00 30%, #5c4033 30%), repeating-linear-gradient(90deg, #3e2723, #3e2723 50px, #2a1610 50px, #2a1610 100px); } /* Stage */
+        .bg-1B { background: repeating-conic-gradient(#111 0% 25%, #dddddd 0% 50%) 50% / 80px 80px; } /* Dining Checkers */
+        .bg-1C { background: repeating-linear-gradient(to right, #4a148c, #4a148c 30px, #2d004d 30px, #2d004d 60px); } /* Pirate Cove Curtains */
+        .bg-2A { background: radial-gradient(ellipse at center, #333 0%, #000 70%); } /* West Hall */
+        .bg-2B { background: radial-gradient(ellipse at center, #333 0%, #000 70%); } /* East Hall */
+        .bg-3  { background: linear-gradient(to bottom, #222, #000); } /* Closet */
+
+        /* Animatronic Modules in Cameras */
+        .cam-sprite { position: absolute; bottom: 10%; transition: all 0.5s ease; filter: drop-shadow(5px 5px 10px #000); }
+
+        #cam-name { position: absolute; top: 5%; left: 5%; font-size: 1.5vw; background: rgba(0,0,0,0.8); padding: 5px 15px; z-index: 26; border: 1px solid white; }
+        
+        .map { position: absolute; bottom: 5%; right: 2%; width: 30%; height: 60%; background: rgba(0,0,0,0.7); border: 2px solid white; padding: 2%; z-index: 26; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, 1fr); gap: 5px; }
+        .cam-btn { background: #333; border: 1px solid white; color: white; cursor: pointer; font-size: 1.2vw; transition: 0.2s; }
+        .cam-btn.active { background: #2ecc71; color: black; box-shadow: 0 0 10px #2ecc71; }
+        
+        /* UI Bottom Buttons */
+        .bottom-bar { position: absolute; bottom: 3%; left: 35%; width: 30%; height: 10%; display: flex; justify-content: center; z-index: 30; }
+        .toggle-cam-btn { width: 100%; background: rgba(255, 255, 255, 0.1); border: 2px solid white; color: white; font-size: 1.5vw; cursor: pointer; border-radius: 5px; transition: 0.2s; text-transform: uppercase; }
+        .toggle-cam-btn:hover { background: rgba(255, 255, 255, 0.4); }
+        .exit-cam-btn { background: rgba(231, 76, 60, 0.3); border-color: #e74c3c; color: #ffcccc; }
+        .exit-cam-btn:hover { background: rgba(231, 76, 60, 0.6); }
+
+        /* Stats */
         #stats { position: absolute; top: 2%; right: 2%; text-align: right; z-index: 30; font-size: 1.8vw; text-shadow: 2px 2px 0 #000; }
-        .usage-bar { color: #2ecc71; font-weight: bold; }
+        .usage-bar { color: #2ecc71; font-weight: bold; letter-spacing: 2px; }
 
-        /* Overlays (Jumpscare / Win) */
+        /* Overlays */
         .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 100; display: none; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
-        #jumpscare-text { font-size: 8vw; color: red; font-weight: bold; animation: shake 0.1s infinite; }
-        #jumpscare-face { font-size: 15vw; animation: zoom 0.5s forwards; }
+        #jumpscare-module { width: 100%; height: 100%; animation: jumpZoom 0.3s forwards, shake 0.1s infinite; display: flex; justify-content: center; align-items: center; background: #000; }
+        #jumpscare-module svg { height: 120%; }
 
-        @keyframes shake { 0% { transform: translate(2px, 1px) rotate(0deg); } 10% { transform: translate(-1px, -2px) rotate(-1deg); } 20% { transform: translate(-3px, 0px) rotate(1deg); } 30% { transform: translate(0px, 2px) rotate(0deg); } 40% { transform: translate(1px, -1px) rotate(1deg); } 50% { transform: translate(-1px, 2px) rotate(-1deg); } 60% { transform: translate(-3px, 1px) rotate(0deg); } 70% { transform: translate(2px, 1px) rotate(-1deg); } 80% { transform: translate(-1px, -1px) rotate(1deg); } 90% { transform: translate(2px, 2px) rotate(0deg); } 100% { transform: translate(1px, -2px) rotate(-1deg); } }
-        @keyframes zoom { 0% { transform: scale(0.5); } 100% { transform: scale(1.5); } }
+        @keyframes shake { 0% { transform: translate(10px, 5px); } 25% { transform: translate(-15px, -10px); } 50% { transform: translate(5px, 15px); } 75% { transform: translate(-10px, -5px); } 100% { transform: translate(10px, 5px); } }
+        @keyframes jumpZoom { 0% { transform: scale(0.5); } 100% { transform: scale(1.5); } }
         
-        /* Golden Freddy (Lux) special overlay */
-        #lux-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background:rgba(255, 215, 0, 0.2); z-index: 15; display: none; justify-content: center; align-items: center; font-size: 15vw; opacity: 0.8; }
+        #lux-overlay { position: absolute; top:0; left:0; width:100%; height:100%; z-index: 15; display: none; justify-content: center; align-items: center; opacity: 0.8; animation: flash 0.1s infinite; }
+        @keyframes flash { 0% { opacity: 0.8; } 50% { opacity: 0.3; } 100% { opacity: 0.8; } }
     </style>
 </head>
 <body>
@@ -80,40 +111,48 @@
     <!-- Office -->
     <div id="office" class="room active">
         <!-- Left Doorway -->
-        <div class="doorway left" id="doorway-left">
-            <div id="left-animatronic" class="door-animatronic">🐰</div>
+        <div class="doorway left">
+            <div id="left-light" class="light-reveal"></div>
+            <div id="left-module" class="door-module"></div>
             <div id="door-left" class="door"></div>
         </div>
         <div class="control-panel left">
-            <button class="btn" id="btn-door-left" onclick="toggleDoor('left')">DOOR</button>
-            <button class="btn" id="btn-light-left" onclick="toggleLight('left')">LIGHT</button>
+            <div class="btn door-btn" id="btn-door-left" onclick="toggleDoor('left')">DOOR</div>
+            <div class="btn light-btn" id="btn-light-left" onclick="toggleLight('left')">LIGHT</div>
         </div>
 
         <!-- Right Doorway -->
-        <div class="doorway right" id="doorway-right">
-            <div id="right-animatronic" class="door-animatronic">🐼</div>
+        <div class="doorway right">
+            <div id="right-light" class="light-reveal"></div>
+            <div id="right-module" class="door-module"></div>
             <div id="door-right" class="door"></div>
         </div>
         <div class="control-panel right">
-            <button class="btn" id="btn-door-right" onclick="toggleDoor('right')">DOOR</button>
-            <button class="btn" id="btn-light-right" onclick="toggleLight('right')">LIGHT</button>
+            <div class="btn door-btn" id="btn-door-right" onclick="toggleDoor('right')">DOOR</div>
+            <div class="btn light-btn" id="btn-light-right" onclick="toggleLight('right')">LIGHT</div>
         </div>
 
+        <div class="fan"></div>
         <div class="desk">SECURITY DESK</div>
         
-        <!-- Lux (Golden Freddy) Illusion -->
-        <div id="lux-overlay">✨</div>
+        <!-- Lux Illusion -->
+        <div id="lux-overlay"></div>
 
         <div class="bottom-bar">
             <button class="toggle-cam-btn" onclick="toggleCameras()">OPEN CAMERAS</button>
         </div>
     </div>
 
-    <!-- Camera System -->
+    <!-- Moving Camera System -->
     <div id="camera-system" class="room">
-        <div id="cam-view">
+        <div class="crt-overlay"></div>
+        
+        <div id="cam-viewport">
             <div id="cam-name">CAM 1A - Show Stage</div>
-            <div id="cam-entities"></div>
+            <!-- This world pans left and right -->
+            <div id="cam-world" class="bg-1A">
+                <div id="cam-sprites" style="position: relative; width: 100%; height: 100%;"></div>
+            </div>
         </div>
         
         <div class="map">
@@ -126,110 +165,143 @@
         </div>
 
         <div class="bottom-bar">
-            <!-- Explicit EXIT cameras button as requested -->
-            <button class="toggle-cam-btn" onclick="toggleCameras()" style="background: rgba(231, 76, 60, 0.5);">EXIT CAMERAS</button>
+            <button class="toggle-cam-btn exit-cam-btn" onclick="toggleCameras()">▼ EXIT CAMERAS ▼</button>
         </div>
     </div>
 
-    <!-- Jumpscare Screen -->
+    <!-- Screens -->
     <div id="jumpscare" class="overlay">
-        <div id="jumpscare-face">🐻</div>
-        <div id="jumpscare-text">JUMPSCARE!</div>
-        <div style="margin-top: 20px; font-size: 2vw;">Game Over. Refresh to restart.</div>
+        <div id="jumpscare-module"></div>
     </div>
 
-    <!-- Win Screen -->
     <div id="win-screen" class="overlay">
         <div style="font-size: 8vw; color: #2ecc71;">6:00 AM</div>
         <div style="font-size: 4vw;">You Survived!</div>
-        <div style="margin-top: 20px; font-size: 2vw;">Refresh to play again.</div>
+        <div style="margin-top: 20px; font-size: 2vw; cursor: pointer;" onclick="location.reload()">[ REFRESH TO PLAY AGAIN ]</div>
     </div>
 </div>
 
 <script>
+    // --- ANIMATRONIC MODULES (Vector Sprites built in pure SVG) ---
+    const svgs = {
+        notnoob: `<svg viewBox="0 0 100 100" style="width:100%; height:100%;">
+            <!-- Freddy / Notnoob -->
+            <rect x="35" y="5" width="30" height="20" fill="#111"/> <!-- Hat -->
+            <rect x="25" y="25" width="50" height="5" fill="#111"/>
+            <circle cx="20" cy="30" r="15" fill="#5C4033"/> <!-- Ears -->
+            <circle cx="80" cy="30" r="15" fill="#5C4033"/>
+            <circle cx="50" cy="60" r="40" fill="#5C4033"/> <!-- Head -->
+            <ellipse cx="50" cy="75" rx="25" ry="15" fill="#8B5A2B"/> <!-- Snout -->
+            <circle cx="35" cy="50" r="8" fill="#fff"/><circle cx="35" cy="50" r="3" fill="#000"/> <!-- Eyes -->
+            <circle cx="65" cy="50" r="8" fill="#fff"/><circle cx="65" cy="50" r="3" fill="#000"/>
+            <ellipse cx="50" cy="65" rx="8" ry="5" fill="#000"/> <!-- Nose -->
+        </svg>`,
+        
+        ben: `<svg viewBox="0 0 100 100" style="width:100%; height:100%;">
+            <!-- Bonnie / Ben -->
+            <ellipse cx="30" cy="30" rx="10" ry="30" fill="#4B0082"/> <!-- Long Ears -->
+            <ellipse cx="70" cy="30" rx="10" ry="30" fill="#4B0082"/>
+            <ellipse cx="50" cy="65" rx="35" ry="30" fill="#4B0082"/> <!-- Head -->
+            <ellipse cx="50" cy="75" rx="20" ry="15" fill="#D8BFD8"/> <!-- Snout -->
+            <circle cx="35" cy="55" r="7" fill="#fff"/><circle cx="35" cy="55" r="3" fill="#ff0000"/> <!-- Eyes -->
+            <circle cx="65" cy="55" r="7" fill="#fff"/><circle cx="65" cy="55" r="3" fill="#ff0000"/>
+            <ellipse cx="50" cy="68" rx="6" ry="4" fill="#000"/>
+        </svg>`,
+
+        panda: `<svg viewBox="0 0 100 100" style="width:100%; height:100%;">
+            <!-- Chica (Panda version) -->
+            <circle cx="20" cy="30" r="15" fill="#111"/> <!-- Black Ears -->
+            <circle cx="80" cy="30" r="15" fill="#111"/>
+            <circle cx="50" cy="60" r="38" fill="#fff"/> <!-- White Face -->
+            <ellipse cx="35" cy="55" rx="12" ry="15" fill="#111"/> <!-- Black Eye Patches -->
+            <ellipse cx="65" cy="55" rx="12" ry="15" fill="#111"/>
+            <circle cx="35" cy="55" r="4" fill="#fff"/> <!-- Eyes -->
+            <circle cx="65" cy="55" r="4" fill="#fff"/>
+            <ellipse cx="50" cy="75" rx="10" ry="6" fill="#111"/> <!-- Nose -->
+        </svg>`,
+
+        random_guy: `<svg viewBox="0 0 100 100" style="width:100%; height:100%;">
+            <!-- Foxy / Random Guy -->
+            <polygon points="10,20 30,50 10,70" fill="#B22222"/> <!-- Ear Fluffs -->
+            <polygon points="90,20 70,50 90,70" fill="#B22222"/>
+            <polygon points="50,90 15,40 85,40" fill="#B22222"/> <!-- Head Shape -->
+            <circle cx="35" cy="50" r="8" fill="#ffcc00"/><circle cx="35" cy="50" r="3" fill="#000"/> <!-- Yellow Eye -->
+            <rect x="55" y="45" width="20" height="10" fill="#111"/> <!-- Eyepatch -->
+            <line x1="85" y1="30" x2="65" y2="50" stroke="#111" stroke-width="3"/>
+            <circle cx="50" cy="80" r="5" fill="#000"/> <!-- Nose -->
+        </svg>`,
+
+        lux: `<svg viewBox="0 0 100 100" style="width:100%; height:100%;">
+            <!-- Golden Freddy / Lux -->
+            <rect x="35" y="5" width="30" height="20" fill="#222"/> 
+            <rect x="25" y="25" width="50" height="5" fill="#222"/>
+            <circle cx="20" cy="30" r="15" fill="#FFD700"/> 
+            <circle cx="80" cy="30" r="15" fill="#FFD700"/>
+            <circle cx="50" cy="60" r="40" fill="#FFD700"/> 
+            <ellipse cx="50" cy="75" rx="25" ry="15" fill="#DAA520"/> 
+            <circle cx="35" cy="50" r="8" fill="#000"/><circle cx="35" cy="50" r="2" fill="#fff"/> <!-- Empty staring eyes -->
+            <circle cx="65" cy="50" r="8" fill="#000"/><circle cx="65" cy="50" r="2" fill="#fff"/>
+            <ellipse cx="50" cy="65" rx="8" ry="5" fill="#000"/>
+        </svg>`
+    };
+
     // --- GAME STATE ---
-    let time = 0; // 0 to 6 (12am to 6am)
+    let time = 0; 
     let power = 100.0;
     let inCameras = false;
     let currentCam = '1A';
     let isGameOver = false;
 
-    // Devices & Power Usage
-    let state = {
-        doorLeft: false,
-        doorRight: false,
-        lightLeft: false,
-        lightRight: false,
-    };
+    let state = { doorLeft: false, doorRight: false, lightLeft: false, lightRight: false };
 
-    // AI Configuration (Names mapped as requested)
-    // notnoob = Freddy (1A -> 1B -> 2B -> RightDoor)
-    // panda = Chica (1A -> 1B -> 2B -> RightDoor)
-    // Ben = Bonnie (1A -> 1B -> 2A -> 3 -> LeftDoor)
-    // random guy = Foxy (1C stages -> sprints to LeftDoor)
-    // Lux = Golden Freddy (Random office appearance)
-    
+    // AI Logic Base
     let animatronics = {
-        notnoob: { name: "notnoob", emoji: "🐻", pos: "1A", level: 3, path:["1A", "1B", "2B", "RightDoor"] },
-        panda:   { name: "panda", emoji: "🐼", pos: "1A", level: 5, path:["1A", "1B", "2B", "RightDoor"] },
-        ben:     { name: "Ben", emoji: "🐰", pos: "1A", level: 6, path:["1A", "1B", "2A", "3", "LeftDoor"] },
-        foxy:    { name: "random guy", emoji: "🦊", pos: "1C", level: 4, stages: 0 }, // 0=Hidden, 1=Peeking, 2=Out, 3=Sprinting
-        lux:     { name: "Lux", emoji: "✨", active: false, timer: 0 }
+        notnoob: { key: "notnoob", pos: "1A", level: 3, path:["1A", "1B", "2B", "RightDoor"], render: { left: '40%', height: '55%' } },
+        panda:   { key: "panda", pos: "1A", level: 5, path:["1A", "1B", "2B", "RightDoor"], render: { left: '65%', height: '50%' } },
+        ben:     { key: "ben", pos: "1A", level: 6, path:["1A", "1B", "2A", "3", "LeftDoor"], render: { left: '15%', height: '60%' } },
+        foxy:    { key: "random_guy", pos: "1C", level: 4, stages: 0, render: { left: '40%', height: '45%' } }, // stages: 0=hidden, 1=peeking, 2=out, 3=attacking
+        lux:     { key: "lux", active: false, timer: 0 }
     };
 
     let intervals = {};
 
-    // --- INITIALIZATION ---
     function startGame() {
-        intervals.clock = setInterval(updateTime, 60000); // 1 hour = 60 real seconds
-        intervals.power = setInterval(updatePower, 1000); // Drain power every second
-        intervals.ai = setInterval(updateAI, 4000); // AI moves every 4 seconds
+        intervals.clock = setInterval(updateTime, 60000); // 1 hour = 60s
+        intervals.power = setInterval(updatePower, 1000); 
+        intervals.ai = setInterval(updateAI, 4000); // Move every 4s
         renderCams();
     }
 
-    // --- MECHANICS (Doors & Lights) ---
+    // --- DOORS & LIGHTS ---
     function toggleDoor(side) {
         if(isGameOver || power <= 0) return;
         state[side === 'left' ? 'doorLeft' : 'doorRight'] = !state[side === 'left' ? 'doorLeft' : 'doorRight'];
         
-        const doorElem = document.getElementById(`door-${side}`);
-        const btnElem = document.getElementById(`btn-door-${side}`);
+        document.getElementById(`door-${side}`).classList.toggle('closed', state[side === 'left' ? 'doorLeft' : 'doorRight']);
+        document.getElementById(`btn-door-${side}`).classList.toggle('active-door', state[side === 'left' ? 'doorLeft' : 'doorRight']);
         
-        if(state[side === 'left' ? 'doorLeft' : 'doorRight']) {
-            doorElem.classList.add('closed');
-            btnElem.classList.add('active-door');
-        } else {
-            doorElem.classList.remove('closed');
-            btnElem.classList.remove('active-door');
+        updateUsage();
+        if(side === 'left' && animatronics.foxy.stages === 3 && state.doorLeft) {
+            power = Math.max(0, power - 5); // Foxy drain
+            animatronics.foxy.stages = 0;
         }
-        updateUsageBar();
-        checkDoorBlock(side); // Immediately block Foxy if he's attacking
     }
 
     function toggleLight(side) {
         if(isGameOver || power <= 0) return;
-        
-        // Turn off other light first (can only use 1 light at a time)
-        if(side === 'left' && state.lightRight) toggleLight('right');
+        if(side === 'left' && state.lightRight) toggleLight('right'); // only 1 light max
         if(side === 'right' && state.lightLeft) toggleLight('left');
 
         state[side === 'left' ? 'lightLeft' : 'lightRight'] = !state[side === 'left' ? 'lightLeft' : 'lightRight'];
         
-        const doorwayElem = document.getElementById(`doorway-${side}`);
-        const btnElem = document.getElementById(`btn-light-${side}`);
+        document.getElementById(`${side}-light`).classList.toggle('light-on', state[side === 'left' ? 'lightLeft' : 'lightRight']);
+        document.getElementById(`btn-light-${side}`).classList.toggle('active-light', state[side === 'left' ? 'lightLeft' : 'lightRight']);
         
-        if(state[side === 'left' ? 'lightLeft' : 'lightRight']) {
-            doorwayElem.style.backgroundColor = "#ffeb3b";
-            btnElem.classList.add('active-light');
-        } else {
-            doorwayElem.style.backgroundColor = "#000";
-            btnElem.classList.remove('active-light');
-        }
-        updateUsageBar();
+        updateUsage();
         renderDoorways();
     }
 
-    // --- CAMERAS ---
+    // --- CAMERAS (The visual panners) ---
     function toggleCameras() {
         if(isGameOver || power <= 0) return;
         inCameras = !inCameras;
@@ -238,13 +310,10 @@
         document.getElementById('camera-system').classList.toggle('active', inCameras);
         
         if(!inCameras && animatronics.lux.active) {
-            // Lux logic: if you drop cameras while Lux is in office, you might die if you don't pull back up
-            // Pulling up cameras makes Lux disappear.
-            animatronics.lux.active = false;
+            animatronics.lux.active = false; // Putting cams down dismisses Lux
             document.getElementById('lux-overlay').style.display = 'none';
         }
-
-        updateUsageBar();
+        updateUsage();
         if(inCameras) renderCams();
     }
 
@@ -253,186 +322,133 @@
         currentCam = id;
         document.getElementById('cam-name').innerText = `CAM ${id} - ${name}`;
         
-        // Update map buttons
         document.querySelectorAll('.cam-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(`cam-${id.toLowerCase()}`).classList.add('active');
+        
+        // Change physical background of the panning world
+        const world = document.getElementById('cam-world');
+        world.className = `bg-${id}`;
         
         renderCams();
     }
 
     function renderCams() {
-        let entities =[];
-        
-        if(animatronics.notnoob.pos === currentCam) entities.push(animatronics.notnoob.name + " " + animatronics.notnoob.emoji);
-        if(animatronics.panda.pos === currentCam) entities.push(animatronics.panda.name + " " + animatronics.panda.emoji);
-        if(animatronics.ben.pos === currentCam) entities.push(animatronics.ben.name + " " + animatronics.ben.emoji);
-        
-        // Special render for Random Guy (Foxy) on CAM 1C
-        if(currentCam === '1C') {
-            if(animatronics.foxy.stages === 0) entities.push("(Curtains Closed)");
-            if(animatronics.foxy.stages === 1) entities.push(animatronics.foxy.name + " peeking " + animatronics.foxy.emoji);
-            if(animatronics.foxy.stages === 2) entities.push(animatronics.foxy.name + " is OUT! " + animatronics.foxy.emoji);
-        }
+        const spriteContainer = document.getElementById('cam-sprites');
+        spriteContainer.innerHTML = ""; // clear old sprites
 
-        document.getElementById('cam-entities').innerHTML = entities.join('<br>');
+        // Normal Animatronics
+        ['notnoob', 'panda', 'ben'].forEach(key => {
+            let bot = animatronics[key];
+            if(bot.pos === currentCam) {
+                let div = document.createElement('div');
+                div.className = 'cam-sprite';
+                div.style.left = bot.render.left;
+                div.style.height = bot.render.height;
+                div.style.width = '25%'; // Keep aspect ratio relatively square
+                div.innerHTML = svgs[key];
+                spriteContainer.appendChild(div);
+            }
+        });
+
+        // Foxy (Random Guy) Logic on Cam 1C
+        if(currentCam === '1C' && animatronics.foxy.stages > 0 && animatronics.foxy.stages < 3) {
+            let div = document.createElement('div');
+            div.className = 'cam-sprite';
+            div.style.left = animatronics.foxy.render.left;
+            div.style.height = animatronics.foxy.render.height;
+            div.style.width = '20%';
+            // If peeking, make him lower and smaller
+            if(animatronics.foxy.stages === 1) {
+                div.style.bottom = '-5%'; 
+                div.style.transform = 'scale(0.8)';
+            }
+            div.innerHTML = svgs[animatronics.foxy.key];
+            spriteContainer.appendChild(div);
+        }
     }
 
     function renderDoorways() {
-        // Left Door (Ben)
-        const leftAnimatronic = document.getElementById('left-animatronic');
+        const leftMod = document.getElementById('left-module');
         if(animatronics.ben.pos === "LeftDoor" && state.lightLeft) {
-            leftAnimatronic.innerText = animatronics.ben.emoji;
-            leftAnimatronic.style.opacity = 1;
-        } else {
-            leftAnimatronic.style.opacity = 0;
-        }
+            leftMod.innerHTML = svgs.ben;
+        } else { leftMod.innerHTML = ""; }
 
-        // Right Door (Panda or Notnoob)
-        const rightAnimatronic = document.getElementById('right-animatronic');
-        if((animatronics.panda.pos === "RightDoor" || animatronics.notnoob.pos === "RightDoor") && state.lightRight) {
-            rightAnimatronic.innerText = animatronics.panda.pos === "RightDoor" ? animatronics.panda.emoji : animatronics.notnoob.emoji;
-            rightAnimatronic.style.opacity = 1;
-        } else {
-            rightAnimatronic.style.opacity = 0;
-        }
+        const rightMod = document.getElementById('right-module');
+        if(animatronics.panda.pos === "RightDoor" && state.lightRight) {
+            rightMod.innerHTML = svgs.panda;
+        } else if (animatronics.notnoob.pos === "RightDoor" && state.lightRight) {
+            rightMod.innerHTML = svgs.notnoob;
+        } else { rightMod.innerHTML = ""; }
     }
 
-    // --- AI LOGIC ---
+    // --- AI MOVEMENT ---
     function updateAI() {
         if(isGameOver) return;
 
-        // Move standard animatronics
         ['ben', 'panda', 'notnoob'].forEach(botKey => {
             let bot = animatronics[botKey];
             if(Math.random() * 20 < bot.level) {
-                let currentIndex = bot.path.indexOf(bot.pos);
-                
-                // If they are at the door
+                let idx = bot.path.indexOf(bot.pos);
                 if(bot.pos === "LeftDoor" || bot.pos === "RightDoor") {
-                    let side = bot.pos === "LeftDoor" ? 'left' : 'right';
-                    let doorClosed = side === 'left' ? state.doorLeft : state.doorRight;
-                    
-                    if(doorClosed) {
-                        // Door is closed, they leave
-                        bot.pos = bot.path[1]; // Reset to early room
-                    } else {
-                        // Door is open, they attack!
-                        if(!inCameras) {
-                           triggerJumpscare(bot.name, bot.emoji); 
-                        }
-                    }
-                } else if (currentIndex < bot.path.length - 1) {
-                    // Move forward
-                    bot.pos = bot.path[currentIndex + 1];
+                    let isLeft = bot.pos === "LeftDoor";
+                    let doorClosed = isLeft ? state.doorLeft : state.doorRight;
+                    if(doorClosed) bot.pos = bot.path[1]; // Reset to 1B
+                    else if(!inCameras) triggerJumpscare(bot.key);
+                } else if (idx < bot.path.length - 1) {
+                    bot.pos = bot.path[idx + 1];
                 }
             }
         });
 
-        // Random Guy (Foxy) logic
+        // Foxy Logic
         if(Math.random() * 20 < animatronics.foxy.level) {
             if(animatronics.foxy.stages < 3) {
-                // Foxy won't move if you are looking at CAM 1C
-                if(!(inCameras && currentCam === '1C')) {
-                    animatronics.foxy.stages++;
-                }
+                if(!(inCameras && currentCam === '1C')) animatronics.foxy.stages++;
             } else if(animatronics.foxy.stages === 3) {
-                // Sprints to left door
-                if(state.doorLeft) {
-                    // Bangs on door, drains power, resets
-                    power = Math.max(0, power - 5);
-                    animatronics.foxy.stages = 0;
-                } else {
-                    // Jumpscare
-                    triggerJumpscare(animatronics.foxy.name, animatronics.foxy.emoji);
-                }
+                if(state.doorLeft) { power = Math.max(0, power - 5); animatronics.foxy.stages = 0; }
+                else triggerJumpscare(animatronics.foxy.key);
             }
         }
 
-        // Lux (Golden Freddy) logic
-        if(!animatronics.lux.active && !inCameras && Math.random() < 0.02) { // 2% chance per AI tick
+        // Lux (Golden Freddy) Logic
+        if(!animatronics.lux.active && !inCameras && Math.random() < 0.02) { 
             animatronics.lux.active = true;
+            document.getElementById('lux-overlay').innerHTML = svgs.lux;
             document.getElementById('lux-overlay').style.display = 'flex';
             animatronics.lux.timer = 0;
         }
-
         if(animatronics.lux.active && !inCameras) {
             animatronics.lux.timer++;
-            if(animatronics.lux.timer > 2) {
-                // Stared at Lux too long without putting cameras up!
-                triggerJumpscare(animatronics.lux.name, animatronics.lux.emoji);
-            }
+            if(animatronics.lux.timer > 2) triggerJumpscare(animatronics.lux.key);
         }
 
         if(inCameras) renderCams();
         renderDoorways();
     }
 
-    function checkDoorBlock(side) {
-        // Called immediately when a door is closed to catch sprinting Foxy
-        if(side === 'left' && animatronics.foxy.stages === 3 && state.doorLeft) {
-            power = Math.max(0, power - 5);
-            animatronics.foxy.stages = 0;
-        }
-    }
-
-    // --- POWER & TIME ---
+    // --- SYSTEMS ---
     function updatePower() {
         if(isGameOver) return;
-        
-        let usage = 1;
-        if(state.doorLeft) usage++;
-        if(state.doorRight) usage++;
-        if(state.lightLeft) usage++;
-        if(state.lightRight) usage++;
-        if(inCameras) usage++;
-
+        let usage = 1 + (state.doorLeft?1:0) + (state.doorRight?1:0) + (state.lightLeft?1:0) + (state.lightRight?1:0) + (inCameras?1:0);
         power -= (0.1 * usage);
-        
-        if(power <= 0) {
-            power = 0;
-            powerOutage();
-        }
-
+        if(power <= 0) { power = 0; powerOutage(); }
         document.getElementById('power-display').innerText = Math.floor(power) + "%";
     }
 
-    function updateUsageBar() {
-        let usage = 1;
-        if(state.doorLeft) usage++;
-        if(state.doorRight) usage++;
-        if(state.lightLeft) usage++;
-        if(state.lightRight) usage++;
-        if(inCameras) usage++;
-
-        let bars = "";
-        for(let i=0; i<usage; i++) bars += "|";
-        
-        const usageElem = document.getElementById('usage-display');
-        usageElem.innerText = bars;
-        
-        if(usage <= 2) usageElem.style.color = "#2ecc71"; // green
-        else if(usage <= 4) usageElem.style.color = "#f1c40f"; // yellow
-        else usageElem.style.color = "#e74c3c"; // red
+    function updateUsage() {
+        let usage = 1 + (state.doorLeft?1:0) + (state.doorRight?1:0) + (state.lightLeft?1:0) + (state.lightRight?1:0) + (inCameras?1:0);
+        document.getElementById('usage-display').innerText = "||||||".substring(0, usage);
+        document.getElementById('usage-display').style.color = usage <= 2 ? "#2ecc71" : usage <= 4 ? "#f1c40f" : "#e74c3c";
     }
 
     function updateTime() {
         if(isGameOver) return;
         time++;
-        
-        let timeString = time === 0 ? "12:00 AM" : time + ":00 AM";
-        document.getElementById('time-display').innerText = timeString;
-
-        // Increase Difficulty as night progresses
-        animatronics.notnoob.level += 1;
-        animatronics.panda.level += 1;
-        animatronics.ben.level += 1;
-        animatronics.foxy.level += 1;
-
+        document.getElementById('time-display').innerText = time === 0 ? "12:00 AM" : time + ":00 AM";
         if(time === 6) winGame();
     }
 
     function powerOutage() {
-        // Turn everything off
         if(inCameras) toggleCameras();
         if(state.doorLeft) toggleDoor('left');
         if(state.doorRight) toggleDoor('right');
@@ -440,43 +456,29 @@
         if(state.lightRight) toggleLight('right');
         
         document.getElementById('office').style.background = "#000";
-        document.querySelectorAll('.btn').forEach(b => b.style.display = 'none');
-        document.querySelector('.bottom-bar').style.display = 'none';
+        document.querySelectorAll('.control-panel, .bottom-bar, .fan').forEach(e => e.style.display = 'none');
         
-        // notnoob (Freddy) kills you when power goes out
-        setTimeout(() => {
-            triggerJumpscare(animatronics.notnoob.name, animatronics.notnoob.emoji);
-        }, 5000); // 5 seconds of darkness before jumpscare
+        setTimeout(() => triggerJumpscare('notnoob'), 5000); 
     }
 
     // --- ENDINGS ---
-    function triggerJumpscare(name, emoji) {
+    function triggerJumpscare(key) {
         if(isGameOver) return;
         isGameOver = true;
-        clearAllIntervals();
+        clearInterval(intervals.clock); clearInterval(intervals.power); clearInterval(intervals.ai);
         
-        const jumpScreen = document.getElementById('jumpscare');
-        jumpScreen.style.display = 'flex';
-        document.getElementById('jumpscare-face').innerText = emoji;
-        document.getElementById('jumpscare-text').innerText = `${name.toUpperCase()} GOT YOU!`;
+        document.getElementById('jumpscare').style.display = 'flex';
+        document.getElementById('jumpscare-module').innerHTML = svgs[key];
     }
 
     function winGame() {
         if(isGameOver) return;
         isGameOver = true;
-        clearAllIntervals();
+        clearInterval(intervals.clock); clearInterval(intervals.power); clearInterval(intervals.ai);
         document.getElementById('win-screen').style.display = 'flex';
     }
 
-    function clearAllIntervals() {
-        clearInterval(intervals.clock);
-        clearInterval(intervals.power);
-        clearInterval(intervals.ai);
-    }
-
-    // Start game on load
     window.onload = startGame;
-
 </script>
 </body>
 </html>
