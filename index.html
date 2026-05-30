@@ -42,7 +42,7 @@
             box-shadow: 0 0 30px rgba(0, 0, 0, 0.9);
         }
 
-        /* Screen States */
+        /* Screen States - Fixed Visibility Specificity */
         .screen {
             position: absolute;
             top: 0;
@@ -53,14 +53,16 @@
             z-index: 10;
         }
 
-        .screen.active {
-            display: block;
+        #start-screen.active,
+        #win-screen.active,
+        #lose-screen.active,
+        #jumpscare-screen.active {
+            display: flex;
         }
 
-        /* Start Screen */
+        /* Start Screen styling */
         #start-screen {
             background: linear-gradient(135deg, #111 0%, #000 100%);
-            display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
@@ -406,17 +408,10 @@
             box-shadow: 0 0 8px rgba(85,255,85,0.6);
         }
 
-        /* Jumpscare Screen */
+        /* Jumpscare Screen Overlay */
         #jumpscare-screen {
             background-color: #000;
             z-index: 30;
-            display: none;
-        }
-
-        #jumpscare-screen.active {
-            display: flex;
-            justify-content: center;
-            align-items: center;
         }
 
         #jumpscare-asset {
@@ -462,19 +457,13 @@
             z-index: 27;
         }
 
-        /* End Screens */
+        /* End Screens styling */
         #win-screen, #lose-screen {
             background-color: #000;
-            display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 40;
-            display: none;
-        }
-
-        #win-screen.active, #lose-screen.active {
-            display: flex;
         }
 
         #win-screen h2 {
@@ -1356,7 +1345,7 @@
             cameraFeed.classList.remove('active');
 
             winScreen.classList.add('active');
-            // Fancy 6 AM chime transition effect
+            // 6 AM chime transition effect
             const winText = document.getElementById('win-6am');
             winText.style.display = 'none';
             setTimeout(() => {
