@@ -73,16 +73,22 @@
         #start-screen h1 {
             font-size: 3rem;
             color: var(--primary-color);
-            margin-bottom: 10px;
+            margin-bottom: 5px;
             text-shadow: 0 0 10px rgba(255, 51, 51, 0.5);
             letter-spacing: 5px;
         }
 
+        #start-screen h3 {
+            font-size: 1.2rem;
+            color: #ffaa00;
+            margin-bottom: 15px;
+        }
+
         #start-screen p {
-            font-size: 1rem;
+            font-size: 0.9rem;
             color: #888;
             max-width: 600px;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
             line-height: 1.5;
         }
 
@@ -90,12 +96,13 @@
             background: #222;
             color: #fff;
             border: 2px solid #555;
-            padding: 15px 40px;
+            padding: 12px 35px;
             font-family: var(--font-family);
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             cursor: pointer;
             transition: all 0.3s ease;
             text-transform: uppercase;
+            margin: 5px;
         }
 
         .btn:hover, .btn:active {
@@ -374,11 +381,11 @@
         /* Camera Map Controls */
         #camera-map {
             position: absolute;
-            bottom: 30px;
-            right: 30px;
-            width: 240px;
-            height: 180px;
-            background: rgba(0, 0, 0, 0.75);
+            bottom: 20px;
+            right: 20px;
+            width: 250px;
+            height: 190px;
+            background: rgba(0, 0, 0, 0.8);
             border: 2px solid #555;
             z-index: 19;
             padding: 10px;
@@ -394,8 +401,8 @@
             background: #333;
             border: 1px solid #777;
             color: #fff;
-            padding: 3px 5px;
-            font-size: 0.65rem;
+            padding: 2px 4px;
+            font-size: 0.6rem;
             cursor: pointer;
             border-radius: 2px;
             transform: translate(-50%, -50%);
@@ -497,16 +504,20 @@
         <!-- Start Screen -->
         <div id="start-screen" class="screen active">
             <h1>FIVE NIGHTS</h1>
-            <p>Procedural retro horror edition. Survive from 12 AM to 6 AM. Track animatronics on the monitor. Close the steel doors to protect yourself. Conserve your limited backup generator power.</p>
-            <button class="btn" id="btn-start">Start Night 1</button>
+            <h3 id="night-title">NIGHT 1</h3>
+            <p>Track animatronics on the monitor. Keep an eye on Pirate Cove (CAM 5) and check your corners. Close the doors to defend yourself. Defend the office from 12 AM to 6 AM.</p>
+            <div>
+                <button class="btn" id="btn-start">Start Night</button>
+                <button class="btn" id="btn-toggle-night" style="background:#552222;">Switch to Night 2</button>
+            </div>
         </div>
 
         <!-- Win Screen -->
         <div id="win-screen" class="screen">
             <h2>5:59 AM</h2>
             <h2 id="win-6am" style="color:#ffee33; display:none; font-size:4rem;">6:00 AM</h2>
-            <p style="margin-bottom: 30px;">Night 1 Completed Successfully.</p>
-            <button class="btn btn-menu">Main Menu</button>
+            <p id="win-status" style="margin-bottom: 30px;">Night Completed Successfully.</p>
+            <button class="btn btn-menu" id="btn-next-night">Proceed</button>
         </div>
 
         <!-- Lose Screen -->
@@ -571,10 +582,10 @@
                 <div class="door-shutter" id="shutter-right"></div>
                 <div class="light-beam" id="beam-right"></div>
                 <div class="silhouette" id="sil-right">
-                    <!-- Chica silhouette -->
+                    <!-- Chica/Freddy silhouette -->
                     <svg viewBox="0 0 100 100" width="100%" height="100%">
                         <circle cx="50" cy="50" r="26" fill="#2d2817"/>
-                        <path d="M42,24 L48,12 L52,12 L58,24 Z" fill="#2d2817" />
+                        <path id="right-sil-headwear" d="M42,24 L48,12 L52,12 L58,24 Z" fill="#2d2817" />
                         <path d="M42,50 L58,50 L50,62 Z" fill="#b85c14" />
                         <circle cx="42" cy="42" r="4.5" fill="#ff00ff" />
                         <circle cx="58" cy="42" r="4.5" fill="#ff00ff" />
@@ -599,16 +610,22 @@
             
             <div id="camera-map">
                 <svg viewBox="0 0 100 100">
-                    <!-- Map floorplan outline -->
-                    <path d="M20,10 L80,10 L80,45 L70,45 L70,75 L30,75 L30,45 L20,45 Z" fill="none" stroke="#777" stroke-width="2"/>
-                    <path d="M30,45 L70,45" fill="none" stroke="#777" stroke-width="2"/>
-                    <path d="M20,25 L30,25" fill="none" stroke="#777" stroke-width="2"/>
-                    <path d="M80,25 L70,25" fill="none" stroke="#777" stroke-width="2"/>
+                    <!-- Advanced Floorplan grid layout -->
+                    <path d="M15,10 L85,10 L85,45 L70,45 L70,80 L30,80 L30,45 L15,45 Z" fill="none" stroke="#666" stroke-width="2"/>
+                    <path d="M30,45 L70,45" fill="none" stroke="#666" stroke-width="2"/>
+                    <path d="M15,25 L30,25" fill="none" stroke="#666" stroke-width="2"/>
+                    <path d="M85,25 L70,25" fill="none" stroke="#666" stroke-width="2"/>
+                    <path d="M30,65 L70,65" fill="none" stroke="#666" stroke-width="1.5"/>
+                    <path d="M42,80 L42,92 L58,92 L58,80" fill="none" stroke="#666" stroke-width="2"/> <!-- Office representation -->
                 </svg>
                 <div class="cam-node active" id="node-cam1" style="top: 15%; left: 50%;">CAM 1</div>
                 <div class="cam-node" id="node-cam2" style="top: 35%; left: 50%;">CAM 2</div>
-                <div class="cam-node" id="node-cam3" style="top: 35%; left: 15%;">CAM 3</div>
-                <div class="cam-node" id="node-cam4" style="top: 35%; left: 85%;">CAM 4</div>
+                <div class="cam-node" id="node-cam3" style="top: 60%; left: 20%;">CAM 3</div>
+                <div class="cam-node" id="node-cam4" style="top: 60%; left: 80%;">CAM 4</div>
+                <div class="cam-node" id="node-cam5" style="top: 35%; left: 15%;">CAM 5</div>
+                <div class="cam-node" id="node-cam6" style="top: 78%; left: 20%;">CAM 6</div>
+                <div class="cam-node" id="node-cam7" style="top: 78%; left: 80%;">CAM 7</div>
+                <div class="cam-node" id="node-cam8" style="top: 18%; left: 15%;">CAM 8</div>
             </div>
         </div>
 
@@ -670,6 +687,74 @@
                 osc.stop(this.ctx.currentTime + 0.25);
             },
 
+            playHeavyBang() {
+                if (!this.ctx) return;
+                // Heavy Foxy metallic door knock
+                for (let i = 0; i < 3; i++) {
+                    let delay = i * 0.15;
+                    let osc = this.ctx.createOscillator();
+                    let gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(60, this.ctx.currentTime + delay);
+                    osc.frequency.exponentialRampToValueAtTime(15, this.ctx.currentTime + delay + 0.3);
+                    
+                    const filter = this.ctx.createBiquadFilter();
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(120, this.ctx.currentTime + delay);
+                    
+                    gain.gain.setValueAtTime(0.6, this.ctx.currentTime + delay);
+                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + delay + 0.3);
+                    
+                    osc.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(this.ctx.currentTime + delay);
+                    osc.stop(this.ctx.currentTime + delay + 0.3);
+                }
+            },
+
+            playChuckle() {
+                if (!this.ctx) return;
+                // Deep Freddy chuckle sound
+                let osc = this.ctx.createOscillator();
+                let gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(45, this.ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(25, this.ctx.currentTime + 0.6);
+                
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(90, this.ctx.currentTime);
+                
+                gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.001, this.ctx.currentTime + 0.6);
+                
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.6);
+            },
+
+            playFootsteps() {
+                if (!this.ctx) return;
+                // Synthesized running footsteps sequence
+                for (let i = 0; i < 6; i++) {
+                    let delay = i * 0.22;
+                    let osc = this.ctx.createOscillator();
+                    let gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(90, this.ctx.currentTime + delay);
+                    osc.frequency.exponentialRampToValueAtTime(20, this.ctx.currentTime + delay + 0.15);
+                    gain.gain.setValueAtTime(0.25, this.ctx.currentTime + delay);
+                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + delay + 0.15);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(this.ctx.currentTime + delay);
+                    osc.stop(this.ctx.currentTime + delay + 0.15);
+                }
+            },
+
             startOfficeHum() {
                 if (!this.ctx || this.humNode) return;
                 this.humOsc = this.ctx.createOscillator();
@@ -691,8 +776,10 @@
 
             stopOfficeHum() {
                 if (this.humOsc) {
-                    this.humOsc.stop();
-                    this.humOsc.disconnect();
+                    try {
+                        this.humOsc.stop();
+                        this.humOsc.disconnect();
+                    } catch(e) {}
                     this.humOsc = null;
                 }
             },
@@ -724,8 +811,10 @@
 
             stopStaticNoise() {
                 if (this.staticNode) {
-                    this.staticNode.stop();
-                    this.staticNode.disconnect();
+                    try {
+                        this.staticNode.stop();
+                        this.staticNode.disconnect();
+                    } catch(e) {}
                     this.staticNode = null;
                 }
             },
@@ -734,14 +823,12 @@
                 if (!this.ctx) return;
                 const duration = 2.0;
                 
-                // High frequency chaotic synthesis for terror effect
                 for (let i = 0; i < 3; i++) {
                     let osc = this.ctx.createOscillator();
                     let gain = this.ctx.createGain();
                     osc.type = i === 0 ? 'sawtooth' : 'square';
                     osc.frequency.setValueAtTime(180 + (i * 120), this.ctx.currentTime);
                     
-                    // Violent pitch fluctuations
                     osc.frequency.linearRampToValueAtTime(1000 + (Math.random() * 400), this.ctx.currentTime + 0.15);
                     osc.frequency.linearRampToValueAtTime(120 - (Math.random() * 50), this.ctx.currentTime + 0.5);
                     osc.frequency.linearRampToValueAtTime(800, this.ctx.currentTime + 1.2);
@@ -758,7 +845,6 @@
 
             playWindDown() {
                 if (!this.ctx) return;
-                // Soft chime melody sequence to simulate power outages (Toreador Song snippet)
                 const melody = [392, 523, 659, 523, 392, 440, 494, 523];
                 const durations = [0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.8];
                 let time = this.ctx.currentTime;
@@ -783,8 +869,9 @@
 
         // --- Game Coordinates & State Mapping ---
         const GameState = {
+            currentNight: 1,
             power: 100,
-            powerUsage: 1, // 1 to 5 units of usage
+            powerUsage: 1,
             timeHour: 12,
             isNightActive: false,
             
@@ -798,17 +885,17 @@
             lightL: false,
             lightR: false,
 
-            // Animatronic AI positions:
-            // 'stage' (CAM1), 'dining' (CAM2), 'hall_l' (CAM3), 'door_l' (at office threshold), 'office' (inside office, pending jumpscare)
-            // 'hall_r' (CAM4), 'door_r'
+            // Animatronic AI positions
             bonniePos: 'stage',
             chicaPos: 'stage',
-            bonnieOfficeTimer: null,
-            chicaOfficeTimer: null,
+            freddyPos: 'stage',
+            foxyStage: 0, // 0: Hidden, 1: Peeking, 2: Gone/Running
+            foxyUnwatchedTime: 0,
+            isFoxyRunning: false,
+            foxyRunProgress: 0,
 
-            // Viewport horizontal scroll (0px to -576px)
+            // Panning Setup
             officePanX: -288,
-            panVelocity: 0,
             maxPan: -576,
 
             reset() {
@@ -824,8 +911,12 @@
                 this.lightR = false;
                 this.bonniePos = 'stage';
                 this.chicaPos = 'stage';
+                this.freddyPos = 'stage';
+                this.foxyStage = 0;
+                this.foxyUnwatchedTime = 0;
+                this.isFoxyRunning = false;
+                this.foxyRunProgress = 0;
                 this.officePanX = -288;
-                this.panVelocity = 0;
                 
                 document.getElementById('shutter-left').classList.remove('closed');
                 document.getElementById('shutter-right').classList.remove('closed');
@@ -838,7 +929,7 @@
             }
         };
 
-        // UI Element Selectors
+        // UI Selectors
         const startScreen = document.getElementById('start-screen');
         const winScreen = document.getElementById('win-screen');
         const loseScreen = document.getElementById('lose-screen');
@@ -852,15 +943,24 @@
         const cameraCanvas = document.getElementById('camera-canvas');
         const cameraCtx = cameraCanvas.getContext('2d');
 
-        // Setup canvas size
         cameraCanvas.width = 480;
         cameraCanvas.height = 270;
+
+        // AI Level mapping based on the active night selection
+        const getAiLevels = () => {
+            if (GameState.currentNight === 1) {
+                return { bonnie: 3, chica: 2, freddy: 0, foxy: 0 }; // Freddy/Foxy completely inactive on Night 1
+            } else {
+                return { bonnie: 6, chica: 5, freddy: 2, foxy: 3 }; // High speed layout on Night 2
+            }
+        };
 
         // --- Core Game Loop Engine ---
         let lastTime = 0;
         let lastPowerTick = 0;
         let aiInterval = null;
         let hourInterval = null;
+        let lastSecondTick = 0;
 
         function updateGame(timestamp) {
             if (!GameState.isNightActive) return;
@@ -868,16 +968,11 @@
             const delta = timestamp - lastTime || 0;
             lastTime = timestamp;
 
-            // Handle Camera panning
             handlePanning(delta);
-
-            // Dynamic Power usage calculator
             handlePowerConsumption(timestamp);
-
-            // Animatronic shadow visibility based on office light state
             updateOfficeSilhouettes();
+            handleRealtimeFoxyRun(delta);
 
-            // Render camera static feed if system monitor is toggled
             if (GameState.isCamOpen) {
                 renderCamFeed();
             }
@@ -885,10 +980,8 @@
             requestAnimationFrame(updateGame);
         }
 
-        // Panning system for desktop and mobile responsive viewport
-        let activeScrollDir = 0; // -1 Left, 1 Right, 0 Center static
+        let activeScrollDir = 0;
 
-        // Touch event captures for mobile compatibility
         function registerControlInterfaces() {
             const handleScrollLeft = (e) => { e.preventDefault(); activeScrollDir = -1; };
             const handleScrollRight = (e) => { e.preventDefault(); activeScrollDir = 1; };
@@ -902,7 +995,6 @@
             rightScroll.addEventListener('pointerup', handleStopScroll);
             rightScroll.addEventListener('pointerleave', handleStopScroll);
 
-            // Mobile compatibility mappings
             leftScroll.addEventListener('touchstart', handleScrollLeft);
             leftScroll.addEventListener('touchend', handleStopScroll);
             rightScroll.addEventListener('touchstart', handleScrollRight);
@@ -923,9 +1015,7 @@
             if (timestamp - lastPowerTick < 100) return;
             lastPowerTick = timestamp;
 
-            // Calculate active modules draining battery:
-            // Baseline passive system drain + interactive modifiers
-            let drainFactor = 0.04; // Baseline
+            let drainFactor = 0.04; 
             let usageBars = 1;
 
             if (GameState.doorL) { drainFactor += 0.08; usageBars++; }
@@ -939,7 +1029,6 @@
 
             document.getElementById('power-val').innerText = Math.floor(GameState.power);
             
-            // Build dynamic warning status bars for UI
             const barContainer = document.getElementById('power-usage-bars');
             barContainer.innerHTML = '';
             for (let i = 0; i < 5; i++) {
@@ -948,7 +1037,7 @@
                 if (i >= usageBars) {
                     bar.className += ' off';
                 } else if (usageBars >= 4) {
-                    bar.style.backgroundColor = '#aa2222'; // Danger color state
+                    bar.style.backgroundColor = '#aa2222';
                 }
                 barContainer.appendChild(bar);
             }
@@ -960,52 +1049,87 @@
 
         function updateOfficeSilhouettes() {
             const bonnieVisible = GameState.lightL && GameState.bonniePos === 'door_l';
-            const chicaVisible = GameState.lightR && GameState.chicaPos === 'door_r';
+            const rightAnimiVisible = GameState.lightR && (GameState.chicaPos === 'door_r' || GameState.freddyPos === 'door_r');
 
             document.getElementById('sil-left').classList.toggle('visible', bonnieVisible);
-            document.getElementById('sil-right').classList.toggle('visible', chicaVisible);
+            
+            const rightSil = document.getElementById('sil-right');
+            rightSil.classList.toggle('visible', rightAnimiVisible);
+            
+            // Adjust the headwear silhouette dynamically if it's Freddy on the right door
+            const silHeadwear = document.getElementById('right-sil-headwear');
+            if (GameState.freddyPos === 'door_r') {
+                silHeadwear.setAttribute('d', 'M40,24 L40,15 L60,15 L60,24 Z'); // Top hat shape
+            } else {
+                silHeadwear.setAttribute('d', 'M42,24 L48,12 L52,12 L58,24 Z'); // Chica hair feather shape
+            }
         }
 
-        // --- Animatronic Movement Systems (AI Engine) ---
+        // Running Foxy timer logic in real time
+        function handleRealtimeFoxyRun(delta) {
+            if (!GameState.isFoxyRunning) return;
+
+            GameState.foxyRunProgress += delta;
+            
+            // Foxy reaches your office hallway corner in 3.5 seconds
+            if (GameState.foxyRunProgress >= 3500) {
+                GameState.isFoxyRunning = false;
+                GameState.foxyRunProgress = 0;
+
+                if (GameState.doorL) {
+                    AudioSynth.playHeavyBang();
+                    GameState.power = Math.max(0, GameState.power - 8); // Drains energy upon knocking
+                    GameState.foxyStage = 0;
+                } else {
+                    triggerJumpscare('foxy');
+                }
+            }
+        }
+
+        // --- Animatronic AI Routines ---
         function runAIEngine() {
             aiInterval = setInterval(() => {
                 if (!GameState.isNightActive) return;
 
-                // Bonnie Movement Loop (Targets Left side)
-                const rollBonnie = Math.random() * 20;
-                const bonnieSpeed = 6; // Level difficulty
-                if (rollBonnie < bonnieSpeed) {
+                const levels = getAiLevels();
+
+                // 1. Bonnie Movement Logic (Left Side)
+                if (Math.random() * 20 < levels.bonnie) {
                     moveBonnie();
                 }
 
-                // Chica Movement Loop (Targets Right side)
-                const rollChica = Math.random() * 20;
-                const chicaSpeed = 5;
-                if (rollChica < chicaSpeed) {
+                // 2. Chica Movement Logic (Right Side)
+                if (Math.random() * 20 < levels.chica) {
                     moveChica();
                 }
-            }, 5000); // Roll movements every 5 seconds
+
+                // 3. Freddy Movement Logic (Right Side, delays when watched)
+                if (levels.freddy > 0 && Math.random() * 20 < levels.freddy) {
+                    moveFreddy();
+                }
+
+                // 4. Foxy Watcher Mechanic
+                if (levels.foxy > 0) {
+                    handleFoxyStageChecks(levels.foxy);
+                }
+
+            }, 4500);
         }
 
         function moveBonnie() {
+            if (GameState.bonniePos === 'office') return;
             switch (GameState.bonniePos) {
-                case 'stage':
-                    GameState.bonniePos = 'dining';
-                    break;
-                case 'dining':
-                    GameState.bonniePos = 'hall_l';
-                    break;
-                case 'hall_l':
-                    GameState.bonniePos = 'door_l';
-                    break;
+                case 'stage': GameState.bonniePos = 'dining'; break;
+                case 'dining': GameState.bonniePos = 'hall_l'; break;
+                case 'hall_l': GameState.bonniePos = 'closet'; break;
+                case 'closet': GameState.bonniePos = 'corner_l'; break;
+                case 'corner_l': GameState.bonniePos = 'door_l'; break;
                 case 'door_l':
-                    // If door closed: Bonnie retreats. If door open: Bonnie waits inside doorway to strike.
                     if (GameState.doorL) {
-                        AudioSynth.playThud(); // Heard hit
+                        AudioSynth.playThud();
                         GameState.bonniePos = 'dining';
                     } else {
                         GameState.bonniePos = 'office';
-                        // Jumpscare triggers if cameras drop
                         queueOfficeAttack('bonnie');
                     }
                     break;
@@ -1013,16 +1137,12 @@
         }
 
         function moveChica() {
+            if (GameState.chicaPos === 'office') return;
             switch (GameState.chicaPos) {
-                case 'stage':
-                    GameState.chicaPos = 'dining';
-                    break;
-                case 'dining':
-                    GameState.chicaPos = 'hall_r';
-                    break;
-                case 'hall_r':
-                    GameState.chicaPos = 'door_r';
-                    break;
+                case 'stage': GameState.chicaPos = 'dining'; break;
+                case 'dining': GameState.chicaPos = 'hall_r'; break;
+                case 'hall_r': GameState.chicaPos = 'corner_r'; break;
+                case 'corner_r': GameState.chicaPos = 'door_r'; break;
                 case 'door_r':
                     if (GameState.doorR) {
                         AudioSynth.playThud();
@@ -1035,148 +1155,297 @@
             }
         }
 
-        function queueOfficeAttack(character) {
-            // Unavoidable jumpscare once animatronic is in office and player lowers camera
-            if (character === 'bonnie') {
-                GameState.bonnieOfficeTimer = setTimeout(() => {
-                    if (!GameState.isCamOpen && GameState.isNightActive) {
-                        triggerJumpscare('bonnie');
+        function moveFreddy() {
+            if (GameState.freddyPos === 'office') return;
+
+            // Freddy only moves if you aren't currently looking directly at him on screen
+            const freddySeen = GameState.isCamOpen && (
+                (GameState.freddyPos === 'stage' && GameState.currentCam === 'cam1') ||
+                (GameState.freddyPos === 'dining' && GameState.currentCam === 'cam2') ||
+                (GameState.freddyPos === 'hall_r' && GameState.currentCam === 'cam4') ||
+                (GameState.freddyPos === 'corner_r' && GameState.currentCam === 'cam7')
+            );
+
+            if (freddySeen) return;
+
+            switch (GameState.freddyPos) {
+                case 'stage': 
+                    GameState.freddyPos = 'dining'; 
+                    AudioSynth.playChuckle(); 
+                    break;
+                case 'dining': 
+                    GameState.freddyPos = 'hall_r'; 
+                    AudioSynth.playChuckle(); 
+                    break;
+                case 'hall_r': 
+                    GameState.freddyPos = 'corner_r'; 
+                    AudioSynth.playChuckle(); 
+                    break;
+                case 'corner_r': 
+                    GameState.freddyPos = 'door_r';
+                    AudioSynth.playChuckle();
+                    break;
+                case 'door_r':
+                    if (GameState.doorR) {
+                        AudioSynth.playThud();
+                        GameState.freddyPos = 'hall_r';
+                    } else {
+                        GameState.freddyPos = 'office';
+                        queueOfficeAttack('freddy');
                     }
-                }, 3000);
-            } else if (character === 'chica') {
-                GameState.chicaOfficeTimer = setTimeout(() => {
-                    if (!GameState.isCamOpen && GameState.isNightActive) {
-                        triggerJumpscare('chica');
-                    }
-                }, 3000);
+                    break;
             }
         }
 
-        // Check if a queued attack is ready to trigger immediately when closing camera monitor
-        function checkImmediateAttack() {
-            if (GameState.bonniePos === 'office') {
-                triggerJumpscare('bonnie');
-            } else if (GameState.chicaPos === 'office') {
-                triggerJumpscare('chica');
+        function handleFoxyStageChecks(aiLevel) {
+            if (GameState.isFoxyRunning) return;
+
+            // Check if Foxy is actively watched
+            const foxyWatched = GameState.isCamOpen && GameState.currentCam === 'cam5';
+            
+            if (foxyWatched) {
+                GameState.foxyUnwatchedTime = 0;
+            } else {
+                GameState.foxyUnwatchedTime += 4.5;
             }
+
+            // Foxy attempts to move/unfurl if left unwatched
+            if (GameState.foxyUnwatchedTime >= 12) {
+                if (Math.random() * 15 < aiLevel) {
+                    GameState.foxyStage++;
+                    GameState.foxyUnwatchedTime = 0;
+
+                    if (GameState.foxyStage === 2) {
+                        // Foxy begins sprinting down hallway
+                        GameState.isFoxyRunning = true;
+                        GameState.foxyRunProgress = 0;
+                        AudioSynth.playFootsteps();
+                    }
+                }
+            }
+        }
+
+        function queueOfficeAttack(character) {
+            const delay = character === 'freddy' ? 2000 : 3500;
+            setTimeout(() => {
+                if (!GameState.isCamOpen && GameState.isNightActive) {
+                    triggerJumpscare(character);
+                }
+            }, delay);
+        }
+
+        function checkImmediateAttack() {
+            if (GameState.bonniePos === 'office') triggerJumpscare('bonnie');
+            else if (GameState.chicaPos === 'office') triggerJumpscare('chica');
+            else if (GameState.freddyPos === 'office') triggerJumpscare('freddy');
         }
 
         // --- Camera Canvas Rendering Engine ---
         function renderCamFeed() {
-            // Render heavy static noise background
-            const staticIntensity = Math.floor(Math.random() * 3);
             cameraCtx.fillStyle = '#050505';
             cameraCtx.fillRect(0, 0, 480, 270);
 
-            // Synthesize dynamic pixel noise map
+            // Dynamic camera noise drawing loops
             const imgData = cameraCtx.createImageData(480, 270);
             const data = imgData.data;
             for (let i = 0; i < data.length; i += 4) {
                 let pixelValue = Math.random() * 255;
-                // Add retro green overlay color tone tint
-                data[i] = pixelValue * 0.8;
-                data[i+1] = pixelValue;
-                data[i+2] = pixelValue * 0.8;
-                data[i+3] = 40; // Semi transparent noise overlay
+                // Distorted VHS tone adjustments
+                data[i] = pixelValue * 0.75;
+                data[i+1] = pixelValue * 0.95;
+                data[i+2] = pixelValue * 0.75;
+                data[i+3] = 45;
             }
             cameraCtx.putImageData(imgData, 0, 0);
 
-            // Vector map room blueprints drawn procedurally depending on selected node
-            cameraCtx.strokeStyle = 'rgba(100, 255, 100, 0.4)';
-            cameraCtx.lineWidth = 2;
-            cameraCtx.shadowColor = 'rgba(0,0,0,0)';
-
-            if (GameState.currentCam === 'cam1') {
-                // Show Stage
-                cameraCtx.strokeRect(100, 50, 280, 160);
-                cameraCtx.fillStyle = 'rgba(50, 50, 50, 0.5)';
-                cameraCtx.fillRect(120, 140, 240, 70); // The platform stage
-
-                // Draw animatronics inside Cam 1 if present
-                if (GameState.bonniePos === 'stage') drawAnimatronicOnCam('bonnie', 180, 130);
-                if (GameState.chicaPos === 'stage') drawAnimatronicOnCam('chica', 300, 130);
-                cameraCtx.fillStyle = '#11ff11';
-                cameraCtx.font = 'bold 14px monospace';
-                cameraCtx.fillText('CAM 1 - SHOW STAGE', 30, 40);
-            } 
-            else if (GameState.currentCam === 'cam2') {
-                // Dining Hall
-                cameraCtx.beginPath();
-                cameraCtx.moveTo(50, 100);
-                cameraCtx.lineTo(430, 100);
-                cameraCtx.lineTo(380, 220);
-                cameraCtx.lineTo(100, 220);
-                cameraCtx.closePath();
-                cameraCtx.stroke();
-
-                // Draw central table structures
-                cameraCtx.fillStyle = 'rgba(40,40,40,0.5)';
-                cameraCtx.fillRect(120, 140, 80, 40);
-                cameraCtx.fillRect(280, 140, 80, 40);
-
-                if (GameState.bonniePos === 'dining') drawAnimatronicOnCam('bonnie', 150, 160);
-                if (GameState.chicaPos === 'dining') drawAnimatronicOnCam('chica', 320, 160);
-                cameraCtx.fillStyle = '#11ff11';
-                cameraCtx.font = 'bold 14px monospace';
-                cameraCtx.fillText('CAM 2 - DINING ROOM', 30, 40);
-            } 
-            else if (GameState.currentCam === 'cam3') {
-                // Left Corridor Hallway perspective lines
-                cameraCtx.beginPath();
-                cameraCtx.moveTo(40, 40);
-                cameraCtx.lineTo(200, 120);
-                cameraCtx.lineTo(200, 240);
-                cameraCtx.lineTo(40, 240);
-                cameraCtx.closePath();
-                cameraCtx.stroke();
-
-                if (GameState.bonniePos === 'hall_l') drawAnimatronicOnCam('bonnie', 120, 170);
-                cameraCtx.fillStyle = '#11ff11';
-                cameraCtx.font = 'bold 14px monospace';
-                cameraCtx.fillText('CAM 3 - WEST HALLWAY', 30, 40);
-            } 
-            else if (GameState.currentCam === 'cam4') {
-                // Right Corridor Hallway perspective lines
-                cameraCtx.beginPath();
-                cameraCtx.moveTo(440, 40);
-                cameraCtx.lineTo(280, 120);
-                cameraCtx.lineTo(280, 240);
-                cameraCtx.lineTo(440, 240);
-                cameraCtx.closePath();
-                cameraCtx.stroke();
-
-                if (GameState.chicaPos === 'hall_r') drawAnimatronicOnCam('chica', 360, 170);
-                cameraCtx.fillStyle = '#11ff11';
-                cameraCtx.font = 'bold 14px monospace';
-                cameraCtx.fillText('CAM 4 - EAST HALLWAY', 30, 40);
+            // Drawing static glitch line scans
+            if (Math.random() < 0.15) {
+                cameraCtx.fillStyle = 'rgba(150, 255, 150, 0.2)';
+                cameraCtx.fillRect(0, Math.random() * 270, 480, 8);
             }
 
-            // Blinking Record Dot overlay UI design element
+            cameraCtx.strokeStyle = 'rgba(80, 220, 80, 0.45)';
+            cameraCtx.lineWidth = 1.8;
+
+            const textX = 30;
+            const textY = 40;
+            cameraCtx.fillStyle = '#11ff11';
+            cameraCtx.font = 'bold 12px monospace';
+
+            switch (GameState.currentCam) {
+                case 'cam1': // Show Stage
+                    cameraCtx.strokeRect(90, 50, 300, 160);
+                    cameraCtx.fillStyle = 'rgba(40, 40, 40, 0.5)';
+                    cameraCtx.fillRect(110, 150, 260, 60); // Stage surface
+                    
+                    if (GameState.freddyPos === 'stage') drawAnimatronicOnCam('freddy', 240, 130);
+                    if (GameState.bonniePos === 'stage') drawAnimatronicOnCam('bonnie', 170, 140);
+                    if (GameState.chicaPos === 'stage') drawAnimatronicOnCam('chica', 310, 140);
+
+                    cameraCtx.fillStyle = '#11ff11';
+                    cameraCtx.fillText('CAM 1 - SHOW STAGE', textX, textY);
+                    break;
+
+                case 'cam2': // Dining Room
+                    cameraCtx.beginPath();
+                    cameraCtx.moveTo(40, 90);
+                    cameraCtx.lineTo(440, 90);
+                    cameraCtx.lineTo(390, 230);
+                    cameraCtx.lineTo(90, 230);
+                    cameraCtx.closePath();
+                    cameraCtx.stroke();
+
+                    // Dining table blocks
+                    cameraCtx.fillStyle = 'rgba(30, 30, 30, 0.6)';
+                    cameraCtx.fillRect(120, 150, 70, 45);
+                    cameraCtx.fillRect(290, 150, 70, 45);
+
+                    if (GameState.freddyPos === 'dining') drawAnimatronicOnCam('freddy', 240, 115);
+                    if (GameState.bonniePos === 'dining') drawAnimatronicOnCam('bonnie', 150, 140);
+                    if (GameState.chicaPos === 'dining') drawAnimatronicOnCam('chica', 320, 140);
+
+                    cameraCtx.fillStyle = '#11ff11';
+                    cameraCtx.fillText('CAM 2 - DINING ROOM', textX, textY);
+                    break;
+
+                case 'cam3': // West Hallway
+                    cameraCtx.beginPath();
+                    cameraCtx.moveTo(40, 40);
+                    cameraCtx.lineTo(190, 120);
+                    cameraCtx.lineTo(190, 240);
+                    cameraCtx.lineTo(40, 240);
+                    cameraCtx.closePath();
+                    cameraCtx.stroke();
+
+                    if (GameState.isFoxyRunning) {
+                        // Fast running Foxy motion blur
+                        drawAnimatronicOnCam('foxy', 110 + Math.sin(Date.now() / 30) * 15, 170);
+                    } else if (GameState.bonniePos === 'hall_l') {
+                        drawAnimatronicOnCam('bonnie', 110, 170);
+                    }
+
+                    cameraCtx.fillStyle = '#11ff11';
+                    cameraCtx.fillText('CAM 3 - WEST HALLWAY', textX, textY);
+                    break;
+
+                case 'cam4': // East Hallway
+                    cameraCtx.beginPath();
+                    cameraCtx.moveTo(440, 40);
+                    cameraCtx.lineTo(290, 120);
+                    cameraCtx.lineTo(290, 240);
+                    cameraCtx.lineTo(440, 240);
+                    cameraCtx.closePath();
+                    cameraCtx.stroke();
+
+                    if (GameState.chicaPos === 'hall_r') drawAnimatronicOnCam('chica', 350, 170);
+                    if (GameState.freddyPos === 'hall_r') drawAnimatronicOnCam('freddy', 310, 150);
+
+                    cameraCtx.fillStyle = '#11ff11';
+                    cameraCtx.fillText('CAM 4 - EAST HALLWAY', textX, textY);
+                    break;
+
+                case 'cam5': // Pirate Cove
+                    cameraCtx.strokeRect(100, 60, 280, 150);
+                    
+                    // Show Foxy curtain configurations
+                    if (GameState.foxyStage === 0) {
+                        // Curtains closed completely
+                        cameraCtx.fillStyle = '#5a1818';
+                        cameraCtx.fillRect(110, 70, 125, 130);
+                        cameraCtx.fillRect(245, 70, 125, 130);
+                        cameraCtx.fillStyle = '#ffee33';
+                        // Star details
+                        cameraCtx.fillText('★', 150, 120);
+                        cameraCtx.fillText('★', 310, 130);
+                    } else if (GameState.foxyStage === 1) {
+                        // Parted curtains peeking
+                        cameraCtx.fillStyle = '#5a1818';
+                        cameraCtx.fillRect(110, 70, 80, 130);
+                        cameraCtx.fillRect(290, 70, 80, 130);
+                        drawAnimatronicOnCam('foxy', 240, 145);
+                    } else {
+                        // Curtain fully parted and empty sign
+                        cameraCtx.fillStyle = '#5a1818';
+                        cameraCtx.fillRect(110, 70, 40, 130);
+                        cameraCtx.fillRect(330, 70, 40, 130);
+                        cameraCtx.fillStyle = '#333';
+                        cameraCtx.fillRect(200, 140, 80, 40);
+                        cameraCtx.fillStyle = '#fff';
+                        cameraCtx.font = '8px monospace';
+                        cameraCtx.fillText("IT'S ME", 225, 162);
+                    }
+
+                    cameraCtx.fillStyle = '#11ff11';
+                    cameraCtx.font = 'bold 12px monospace';
+                    cameraCtx.fillText('CAM 5 - PIRATE COVE', textX, textY);
+                    break;
+
+                case 'cam6': // West Hallway Corner
+                    cameraCtx.strokeRect(50, 50, 380, 170);
+                    
+                    if (GameState.bonniePos === 'corner_l') {
+                        // Bonnie up close staring directly into camera
+                        drawAnimatronicOnCam('bonnie', 240, 135);
+                    }
+
+                    cameraCtx.fillStyle = '#11ff11';
+                    cameraCtx.fillText('CAM 6 - WEST CORNER', textX, textY);
+                    break;
+
+                case 'cam7': // East Hallway Corner
+                    cameraCtx.strokeRect(50, 50, 380, 170);
+
+                    if (GameState.chicaPos === 'corner_r') {
+                        drawAnimatronicOnCam('chica', 240, 135);
+                    } else if (GameState.freddyPos === 'corner_r') {
+                        // Spooky glowing eyes in the corner
+                        cameraCtx.fillStyle = '#ffaa00';
+                        cameraCtx.beginPath();
+                        cameraCtx.arc(220, 130, 4, 0, Math.PI * 2);
+                        cameraCtx.arc(260, 130, 4, 0, Math.PI * 2);
+                        cameraCtx.fill();
+                    }
+
+                    cameraCtx.fillStyle = '#11ff11';
+                    cameraCtx.fillText('CAM 7 - EAST CORNER', textX, textY);
+                    break;
+
+                case 'cam8': // Backstage / Supply Closet
+                    cameraCtx.strokeRect(100, 50, 280, 160);
+                    cameraCtx.fillStyle = 'rgba(50, 50, 50, 0.4)';
+                    cameraCtx.fillRect(120, 160, 60, 50); // Clutter shelf
+
+                    if (GameState.bonniePos === 'closet') {
+                        drawAnimatronicOnCam('bonnie', 260, 130);
+                    }
+
+                    cameraCtx.fillStyle = '#11ff11';
+                    cameraCtx.fillText('CAM 8 - BACKSTAGE', textX, textY);
+                    break;
+            }
+
+            // Blinking Recording text indicator overlays
             if (Math.floor(Date.now() / 600) % 2 === 0) {
                 cameraCtx.fillStyle = '#ff0000';
                 cameraCtx.beginPath();
-                cameraCtx.arc(430, 35, 8, 0, Math.PI * 2);
+                cameraCtx.arc(430, 35, 6, 0, Math.PI * 2);
                 cameraCtx.fill();
             }
             cameraCtx.fillStyle = '#ffffff';
-            cameraCtx.font = '14px monospace';
-            cameraCtx.fillText('REC', 380, 40);
+            cameraCtx.font = '11px monospace';
+            cameraCtx.fillText('REC', 390, 38);
         }
 
-        // Render simple abstract canvas shapes representing monster locations
         function drawAnimatronicOnCam(character, x, y) {
             if (character === 'bonnie') {
                 cameraCtx.fillStyle = '#413c69';
-                // Draw Head
                 cameraCtx.beginPath();
                 cameraCtx.arc(x, y, 22, 0, Math.PI * 2);
                 cameraCtx.fill();
-                // Draw ears
                 cameraCtx.beginPath();
                 cameraCtx.ellipse(x - 10, y - 30, 6, 18, 0, 0, Math.PI * 2);
                 cameraCtx.ellipse(x + 10, y - 30, 6, 18, 0, 0, Math.PI * 2);
                 cameraCtx.fill();
-                // Glowing vector eyes
                 cameraCtx.fillStyle = '#ff3333';
                 cameraCtx.beginPath();
                 cameraCtx.arc(x - 8, y - 4, 3, 0, Math.PI * 2);
@@ -1187,7 +1456,6 @@
                 cameraCtx.beginPath();
                 cameraCtx.arc(x, y, 24, 0, Math.PI * 2);
                 cameraCtx.fill();
-                // Draw Beak
                 cameraCtx.fillStyle = '#f57b51';
                 cameraCtx.beginPath();
                 cameraCtx.moveTo(x - 10, y + 2);
@@ -1195,18 +1463,52 @@
                 cameraCtx.lineTo(x, y + 14);
                 cameraCtx.closePath();
                 cameraCtx.fill();
-                // Glowing magenta eyes
                 cameraCtx.fillStyle = '#ff00ff';
                 cameraCtx.beginPath();
                 cameraCtx.arc(x - 7, y - 5, 3.5, 0, Math.PI * 2);
                 cameraCtx.arc(x + 7, y - 5, 3.5, 0, Math.PI * 2);
                 cameraCtx.fill();
+            } else if (character === 'freddy') {
+                cameraCtx.fillStyle = '#5c3d24';
+                cameraCtx.beginPath();
+                cameraCtx.arc(x, y, 24, 0, Math.PI * 2);
+                cameraCtx.fill();
+                // Hat
+                cameraCtx.fillStyle = '#0a0a0a';
+                cameraCtx.fillRect(x - 15, y - 38, 30, 15);
+                cameraCtx.fillRect(x - 22, y - 25, 44, 4);
+                // Glowing eyes
+                cameraCtx.fillStyle = '#33ffff';
+                cameraCtx.beginPath();
+                cameraCtx.arc(x - 8, y - 4, 3.5, 0, Math.PI * 2);
+                cameraCtx.arc(x + 8, y - 4, 3.5, 0, Math.PI * 2);
+                cameraCtx.fill();
+            } else if (character === 'foxy') {
+                cameraCtx.fillStyle = '#a23920';
+                cameraCtx.beginPath();
+                cameraCtx.arc(x, y, 21, 0, Math.PI * 2);
+                cameraCtx.fill();
+                // Spiky ears
+                cameraCtx.beginPath();
+                cameraCtx.moveTo(x - 20, y - 10);
+                cameraCtx.lineTo(x - 12, y - 28);
+                cameraCtx.lineTo(x - 4, y - 15);
+                cameraCtx.moveTo(x + 20, y - 10);
+                cameraCtx.lineTo(x + 12, y - 28);
+                cameraCtx.lineTo(x + 4, y - 15);
+                cameraCtx.fill();
+                // Eye patch & Glowing eye
+                cameraCtx.fillStyle = '#111';
+                cameraCtx.fillRect(x - 12, y - 8, 10, 8);
+                cameraCtx.fillStyle = '#ffcc00';
+                cameraCtx.beginPath();
+                cameraCtx.arc(x + 7, y - 4, 3, 0, Math.PI * 2);
+                cameraCtx.fill();
             }
         }
 
-        // --- Game Setup Event Listeners ---
+        // --- Game Action Event Bindings ---
         function registerActionListeners() {
-            // Interactive Office Button Actions
             document.getElementById('btn-door-l').addEventListener('click', (e) => {
                 AudioSynth.playClick();
                 GameState.doorL = !GameState.doorL;
@@ -1221,7 +1523,6 @@
                 document.getElementById('shutter-right').classList.toggle('closed', GameState.doorR);
             });
 
-            // Hold light logic (Toggles light overlay for looking down halls)
             const toggleLight = (side, state) => {
                 AudioSynth.playClick();
                 if (side === 'left') {
@@ -1235,7 +1536,6 @@
                 }
             };
 
-            // Event bounds configuration for Pointer and Touch controls
             document.getElementById('btn-light-l').addEventListener('pointerdown', () => toggleLight('left', true));
             document.getElementById('btn-light-l').addEventListener('pointerup', () => toggleLight('left', false));
             document.getElementById('btn-light-l').addEventListener('pointerleave', () => toggleLight('left', false));
@@ -1244,11 +1544,19 @@
             document.getElementById('btn-light-r').addEventListener('pointerup', () => toggleLight('right', false));
             document.getElementById('btn-light-r').addEventListener('pointerleave', () => toggleLight('right', false));
 
-            // Camera System activation interface
-            monitorToggle.addEventListener('pointerenter', toggleCameraFeed);
-            monitorToggle.addEventListener('click', toggleCameraFeed); // mobile contingency clicks
+            // --- RESOLVED MOBILE TOGGLE DOUBLE-TRIGGER BUG ---
+            // Used a single pointerdown listener with e.preventDefault() to bypass browser tap-click translations completely
+            let lastToggleTime = 0;
+            const handleMonitorInteraction = (e) => {
+                e.preventDefault();
+                const now = Date.now();
+                if (now - lastToggleTime < 300) return; // Debounce guard
+                lastToggleTime = now;
+                toggleCameraFeed();
+            };
 
-            // Map Selector Button Events
+            monitorToggle.addEventListener('pointerdown', handleMonitorInteraction);
+
             const camNodes = document.querySelectorAll('.cam-node');
             camNodes.forEach(node => {
                 node.addEventListener('click', (e) => {
@@ -1260,7 +1568,6 @@
                 });
             });
 
-            // Main Menu Navigation Loops
             document.querySelectorAll('.btn-menu').forEach(btn => {
                 btn.addEventListener('click', () => {
                     AudioSynth.playClick();
@@ -1268,6 +1575,32 @@
                     loseScreen.classList.remove('active');
                     startScreen.classList.add('active');
                 });
+            });
+
+            // Toggle difficulty setups between Nights
+            document.getElementById('btn-toggle-night').addEventListener('click', () => {
+                AudioSynth.playClick();
+                if (GameState.currentNight === 1) {
+                    GameState.currentNight = 2;
+                    document.getElementById('btn-toggle-night').innerText = "Switch to Night 1";
+                    document.getElementById('btn-toggle-night').style.backgroundColor = "#225522";
+                    document.getElementById('night-title').innerText = "NIGHT 2";
+                } else {
+                    GameState.currentNight = 1;
+                    document.getElementById('btn-toggle-night').innerText = "Switch to Night 2";
+                    document.getElementById('btn-toggle-night').style.backgroundColor = "#552222";
+                    document.getElementById('night-title').innerText = "NIGHT 1";
+                }
+            });
+
+            document.getElementById('btn-next-night').addEventListener('click', () => {
+                // If they completed Night 1, proceed to Night 2
+                if (GameState.currentNight === 1) {
+                    GameState.currentNight = 2;
+                    document.getElementById('btn-toggle-night').innerText = "Switch to Night 1";
+                    document.getElementById('btn-toggle-night').style.backgroundColor = "#225522";
+                    document.getElementById('night-title').innerText = "NIGHT 2";
+                }
             });
         }
 
@@ -1281,7 +1614,6 @@
                 AudioSynth.setStaticVolume(0.12);
             } else {
                 AudioSynth.setStaticVolume(0.02);
-                // Trigger jumpscare if camera dropped while animatronic is waiting
                 checkImmediateAttack();
             }
         }
@@ -1306,7 +1638,6 @@
             lastTime = performance.now();
             lastPowerTick = performance.now();
 
-            // Run core intervals
             runAIEngine();
             runTimeClock();
 
@@ -1314,7 +1645,7 @@
         }
 
         function runTimeClock() {
-            let hourDuration = 60000; // 60 seconds per hour (6 mins total gameplay survival time)
+            let hourDuration = 60000; // 60 seconds per hour
             hourInterval = setInterval(() => {
                 if (!GameState.isNightActive) return;
 
@@ -1345,9 +1676,20 @@
             cameraFeed.classList.remove('active');
 
             winScreen.classList.add('active');
-            // 6 AM chime transition effect
             const winText = document.getElementById('win-6am');
             winText.style.display = 'none';
+            
+            const statusText = document.getElementById('win-status');
+            statusText.innerText = `Night ${GameState.currentNight} Completed Successfully.`;
+
+            // Night selection button updates
+            const proceedBtn = document.getElementById('btn-next-night');
+            if (GameState.currentNight === 1) {
+                proceedBtn.innerText = "Proceed to Night 2";
+            } else {
+                proceedBtn.innerText = "Main Menu";
+            }
+
             setTimeout(() => {
                 winText.style.display = 'block';
                 AudioSynth.playWindDown();
@@ -1359,23 +1701,19 @@
             AudioSynth.stopOfficeHum();
             AudioSynth.stopStaticNoise();
 
-            // Blackout office elements
             gameplayHud.style.display = 'none';
             leftScroll.style.display = 'none';
             rightScroll.style.display = 'none';
             monitorToggle.style.display = 'none';
             cameraFeed.classList.remove('active');
 
-            // Slide open doors automatically on system lock up
             document.getElementById('shutter-left').classList.remove('closed');
             document.getElementById('shutter-right').classList.remove('closed');
             document.getElementById('beam-left').classList.remove('on');
             document.getElementById('beam-right').classList.remove('on');
 
-            // Play music box chime
             AudioSynth.playWindDown();
 
-            // Random delay to blackout death
             setTimeout(() => {
                 if (!GameState.isNightActive) triggerJumpscare('freddy');
             }, 7000);
@@ -1387,7 +1725,6 @@
             AudioSynth.stopOfficeHum();
             AudioSynth.stopStaticNoise();
 
-            // Set jumpscare graphic context dynamically using SVG
             const graphicsContainer = document.getElementById('jumpscare-graphics');
             graphicsContainer.innerHTML = '';
 
@@ -1416,8 +1753,18 @@
                     <path d="M30,58 Q50,45 70,58 Q50,85 30,58 Z" fill="#b85c14"/>
                     <rect x="38" y="58" width="24" height="3" fill="#ffffff" />
                 `;
+            } else if (character === 'foxy') {
+                graphicsContainer.innerHTML = `
+                    <circle cx="50" cy="55" r="31" fill="#992a15"/>
+                    <path d="M30,35 L42,12 L50,30 L58,12 L70,35 Z" fill="#992a15"/>
+                    <rect x="28" y="42" width="16" height="12" fill="#111" />
+                    <circle cx="60" cy="44" r="6" fill="#ffcc00" />
+                    <circle cx="60" cy="44" r="2" fill="#ff3300" />
+                    <path d="M35,65 Q50,45 65,65 Q50,85 35,65 Z" fill="#111"/>
+                    <rect x="42" y="65" width="16" height="4" fill="#ffffff" />
+                `;
             } else {
-                // Freddy (Power blackout attack)
+                // Freddy
                 graphicsContainer.innerHTML = `
                     <circle cx="50" cy="55" r="32" fill="#3a2312"/>
                     <rect x="35" y="15" width="30" height="15" fill="#000" rx="3" />
