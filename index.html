@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#000000">
+<title>Five Nights - 3D</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Courier New', monospace; color: #ddd; touch-action: none; overscroll-behavior: none; }
+  #game { position: fixed; inset: 0; width: 100%; height: 100%; }
+  #canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+
+  #hud-top {
+    position: absolute; top: 0; left: 0; right: 0;
+    padding: 10px 14px; padding-top: max(10px, env(safe-area-inset-top));
+    display: flex; justify-content: space-between; align-items: flex-start;
+    pointer-events: none; z-index: 10;
+    font-size: 13px; letter-spacing: 1px; text-shadow: 0 0 6px #000, 0 0 3px #000;
+  }
+  .hud-block { background: rgba(0,0,0,0.45); border: 1px solid rgba(180,30,30,0.5); padding: 6px 10px; border-radius: 4px; backdrop-filter: blur(2px); }
+  .hud-label { font-size: 9px; color: #b04040; letter-spacing: 2px; }
+  .hud-value { font-size: 16px; color: #e8d8b0; font-weight: bold; }
+  #power-bar-wrap { width: 110px; height: 8px; background: #220000; border: 1px solid #553030; margin-top: 4px; border-radius: 2px; overflow: hidden; }
+  #power-bar { height: 100%; width: 100%; background: linear-gradient(90deg,#4caf50,#cddc39,#ffc107,#f44336); transition: width 0.3s; }
+
+  #controls {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 12px; padding-bottom: max(12px, env(safe-area-inset-bottom));
+    display: flex; justify-content: space-between; align-items: flex-end;
+    z-index: 10; pointer-events: none;
+  }
+  .ctrl-group { display: flex; gap: 10px; pointer-events: auto; }
+  .btn {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: rgba(20,20,25,0.75); border: 2px solid #444;
+    color: #ccc; font-size: 10px; font-weight: bold; letter-spacing: 1px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.1s; backdrop-filter: blur(3px);
+    text-align: center; line-height: 1.1;
+  }
+  .btn:active { transform: scale(0.92); background: rgba(180,30,30,0.7); border-color: #b03030; }
+  .btn.active { background: rgba(180,30,30,0.6); border-color: #ff4040; color: #fff; box-shadow: 0 0 14px rgba(255,60,60,0.5); }
+  .btn .icon { font-size: 22px; line-height: 1; margin-bottom: 2px; }
+  .btn-cam { width: 78px; height: 78px; }
+  .btn-large { width: 72px; height: 72px; }
+
+  #cam-panel {
+    position: absolute; inset: 0; z-index: 12;
+    background: transparent; display: none;
+    flex-direction: column; align-items: center; justify-content: flex-end;
+    padding: 12px; padding-bottom: max(12px, env(safe-area-inset-bottom));
+    pointer-events: none;
+  }
+  #cam-panel.active { display: flex; }
+  #cam-exit {
+    position: absolute; top: 14px; top: max(14px, env(safe-area-inset-top)); right: 12px;
+    background: rgba(60,15,15,0.85); border: 2px solid #802020; color: #e8d0a0;
+    padding: 8px 16px; font-size: 12px; letter-spacing: 2px; cursor: pointer;
+    border-radius: 4px; font-family: inherit; z-index: 13; pointer-events: auto;
+  }
+  #cam-exit:active { background: rgba(180,40,40,0.6); transform: scale(0.95); }
+  #cam-title {
+    position: absolute; top: 14px; top: max(14px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
+    font-size: 14px; letter-spacing: 3px; color: #f0e0a0;
+    text-shadow: 0 0 6px #000; z-index: 11; background: rgba(0,0,0,0.5);
+    padding: 4px 14px; border: 1px solid rgba(180,30,30,0.4); border-radius: 3px;
+  }
+  #cam-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+    width: 100%; max-width: 560px; pointer-events: auto;
+  }
+  .cam-btn {
+    background: rgba(30,15,15,0.85); border: 2px solid #553030; color: #d8c890;
+    padding: 10px 4px; font-size: 9px; letter-spacing: 1px; border-radius: 4px;
+    cursor: pointer; transition: all 0.1s; font-family: inherit; text-transform: uppercase;
+    line-height: 1.2; min-height: 44px; display: flex; align-items: center; justify-content: center; text-align: center;
+  }
+  .cam-btn:active { transform: scale(0.95); }
+  .cam-btn.active { background: rgba(180,40,40,0.5); border-color: #ff5050; color: #fff; box-shadow: 0 0 8px rgba(255,80,80,0.4); }
+  .cam-btn .cam-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #4a0; margin-right: 3px; vertical-align: middle; }
+  .cam-btn.has-anim .cam-dot { background: #f33; animation: blink 0.8s infinite; }
+  @keyframes blink { 50% { opacity: 0.3; } }
+
+  .scanlines::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 7;
+    background: repeating-linear-gradient(0deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 3px);
+    mix-blend-mode: overlay;
+  }
+  .scanlines::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 7;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.5) 100%);
+  }
+
+  #menu {
+    position: absolute; inset: 0; z-index: 50;
+    background: radial-gradient(ellipse at center, #1a0808 0%, #000 70%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 20px;
+  }
+  #menu h1 {
+    font-size: clamp(28px, 7vw, 56px); color: #c02020; letter-spacing: 4px;
+    text-shadow: 0 0 18px rgba(255,40,40,0.6), 0 2px 0 #500; margin-bottom: 6px;
+    font-weight: bold; animation: flicker 3s infinite;
+  }
+  #menu h2 { font-size: clamp(14px, 3.5vw, 22px); color: #888; letter-spacing: 6px; margin-bottom: 40px; }
+  @keyframes flicker { 0%,19%,21%,23%,80%,100% { opacity: 1; } 20%,22%,55% { opacity: 0.5; } }
+  .menu-btn {
+    background: rgba(60,15,15,0.8); border: 2px solid #802020; color: #e8d0a0;
+    padding: 14px 36px; font-size: 16px; letter-spacing: 3px; cursor: pointer;
+    margin: 8px; border-radius: 4px; transition: all 0.2s; font-family: inherit; min-width: 220px;
+  }
+  .menu-btn:active { background: rgba(180,40,40,0.6); transform: scale(0.97); }
+  #menu .hint { margin-top: 30px; font-size: 11px; color: #555; line-height: 1.6; max-width: 380px; }
+
+  #jumpscare {
+    position: absolute; inset: 0; z-index: 100; display: none;
+    background: #000; align-items: center; justify-content: center;
+  }
+  #jumpscare.active { display: flex; animation: shake 0.08s infinite; }
+  @keyframes shake { 0%{transform:translate(0,0)} 25%{transform:translate(8px,-6px)} 50%{transform:translate(-7px,5px)} 75%{transform:translate(5px,7px)} 100%{transform:translate(0,0)} }
+  #jumpscare canvas { width: 100%; height: 100%; object-fit: cover; }
+
+  #result {
+    position: absolute; inset: 0; z-index: 90; display: none;
+    background: #000; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 20px;
+  }
+  #result.active { display: flex; }
+  #result h1 { font-size: clamp(32px, 9vw, 64px); margin-bottom: 20px; letter-spacing: 4px; }
+  #result.win h1 { color: #4caf50; text-shadow: 0 0 20px rgba(80,200,80,0.5); }
+  #result.lose h1 { color: #c02020; text-shadow: 0 0 20px rgba(255,40,40,0.5); }
+  #result p { color: #999; margin-bottom: 30px; font-size: 14px; }
+
+  #loading {
+    position: absolute; inset: 0; z-index: 200; background: #000;
+    display: flex; align-items: center; justify-content: center; color: #802020;
+    font-size: 14px; letter-spacing: 3px; flex-direction: column;
+  }
+  #loading .dot { animation: pulse 1s infinite; }
+  @keyframes pulse { 50% { opacity: 0.2; } }
+
+  #door-indicator {
+    position: absolute; top: 50%; transform: translateY(-50%); z-index: 9;
+    pointer-events: none; display: flex; flex-direction: column; gap: 8px;
+  }
+  #door-indicator.left { left: 8px; }
+  #door-indicator.right { right: 8px; }
+  .door-light {
+    width: 10px; height: 10px; border-radius: 50%; background: #200;
+    border: 1px solid #410; transition: all 0.2s;
+  }
+  .door-light.on { background: #f40; box-shadow: 0 0 10px #f40; }
+
+  #night-intro {
+    position: absolute; inset: 0; z-index: 60; background: #000;
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center;
+  }
+  #night-intro.active { display: flex; }
+  #night-intro .night-num { font-size: clamp(48px, 14vw, 110px); color: #c02020; letter-spacing: 6px; text-shadow: 0 0 20px rgba(255,40,40,0.5); }
+  #night-intro .night-sub { font-size: 14px; color: #888; letter-spacing: 4px; margin-top: 8px; }
+  #night-intro .night-time { font-size: 18px; color: #d8b060; letter-spacing: 3px; margin-top: 20px; }
+
+  @media (max-width: 380px) {
+    .btn { width: 56px; height: 56px; font-size: 9px; }
+    .btn .icon { font-size: 18px; }
+    .btn-cam { width: 68px; height: 68px; }
+    #cam-grid { grid-template-columns: repeat(3, 1fr); }
+    .hud-value { font-size: 14px; }
+  }
+  @media (orientation: portrait) and (min-width: 600px) {
+    .btn { width: 72px; height: 72px; }
+    .btn-cam { width: 86px; height: 86px; }
+  }
+  @media (orientation: landscape) and (max-height: 500px) {
+    .btn { width: 52px; height: 52px; font-size: 8px; }
+    .btn .icon { font-size: 16px; }
+    .btn-cam { width: 62px; height: 62px; }
+    #controls { padding: 6px 8px; }
+    #hud-top { padding: 4px 8px; padding-top: max(4px, env(safe-area-inset-top)); }
+    .hud-block { padding: 3px 6px; }
+  }
+</style>
+</head>
+<body>
+<div id="game">
+  <canvas id="canvas"></canvas>
+
+  <div id="hud-top" style="display:none;">
+    <div class="hud-block">
+      <div class="hud-label">POWER</div>
+      <div class="hud-value" id="power-text">100%</div>
+      <div id="power-bar-wrap"><div id="power-bar"></div></div>
+      <div class="hud-label" style="margin-top:3px;" id="usage-text">USAGE: 1</div>
+    </div>
+    <div class="hud-block" style="text-align:center;">
+      <div class="hud-label">NIGHT</div>
+      <div class="hud-value" id="night-text">1</div>
+    </div>
+    <div class="hud-block" style="text-align:right;">
+      <div class="hud-label">TIME</div>
+      <div class="hud-value" id="time-text">12 AM</div>
+    </div>
+  </div>
+
+  <div id="door-indicator" class="left">
+    <div class="door-light" id="light-left"></div>
+  </div>
+  <div id="door-indicator" class="right">
+    <div class="door-light" id="light-right"></div>
+  </div>
+
+  <div id="controls" style="display:none;">
+    <div class="ctrl-group">
+      <div class="btn" id="btn-left-door"><span class="icon">◀</span>LEFT<br>DOOR</div>
+      <div class="btn" id="btn-left-light"><span class="icon">💡</span>LEFT<br>LIGHT</div>
+    </div>
+    <div class="ctrl-group cam-group">
+      <div class="btn btn-cam" id="btn-cam"><span class="icon">📷</span>CAMS</div>
+    </div>
+    <div class="ctrl-group">
+      <div class="btn" id="btn-right-light"><span class="icon">💡</span>RIGHT<br>LIGHT</div>
+      <div class="btn" id="btn-right-door"><span class="icon">▶</span>RIGHT<br>DOOR</div>
+    </div>
+  </div>
+
+  <div id="cam-panel">
+    <div id="cam-title">CAM 1A — SHOW STAGE</div>
+    <button id="cam-exit">▼ CLOSE</button>
+    <div id="cam-grid"></div>
+  </div>
+
+  <div id="night-intro">
+    <div class="night-num" id="night-intro-num">1</div>
+    <div class="night-sub">NIGHT</div>
+    <div class="night-time">12 AM</div>
+  </div>
+
+  <div id="menu">
+    <h1>FIVE NIGHTS</h1>
+    <h2>3D</h2>
+    <button class="menu-btn" id="btn-start">NEW GAME</button>
+    <button class="menu-btn" id="btn-continue" style="display:none;">CONTINUE — NIGHT <span id="continue-night">2</span></button>
+    <div class="hint">
+      Survive from 12 AM to 6 AM.<br>
+      Watch cameras. Close doors to block animatronics.<br>
+      Manage power — every door, light, and camera drains it.<br>
+      Tap CAMS to view security cameras. Tap doors to seal them.<br><br>
+      Best played with sound on. 🎧
+    </div>
+  </div>
+
+  <div id="result">
+    <h1 id="result-title"></h1>
+    <p id="result-text"></p>
+    <button class="menu-btn" id="btn-result-continue">CONTINUE</button>
+  </div>
+
+  <div id="jumpscare"><canvas id="jumpscare-canvas"></canvas></div>
+
+  <div id="loading"><div>Loading<span class="dot">...</span></div></div>
+</div>
+
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+// ============================================================
+//  FIVE NIGHTS 3D — single-file Three.js FNAF-style horror game
+// ============================================================
+
+// ---------- Globals ----------
+const canvas = document.getElementById('canvas');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x000000);
+scene.fog = new THREE.FogExp2(0x000000, 0.06);
+
+const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.05, 100);
+camera.position.set(0, 1.5, 0);
+
+// ---------- Lighting ----------
+const ambient = new THREE.AmbientLight(0x222233, 0.6);
+scene.add(ambient);
+
+const moonLight = new THREE.DirectionalLight(0x445588, 0.4);
+moonLight.position.set(-5, 8, -5);
+scene.add(moonLight);
+
+const deskLight = new THREE.PointLight(0xffaa66, 1.2, 8, 1.5);
+deskLight.position.set(0, 2.2, 1.2);
+scene.add(deskLight);
+
+// ---------- Materials ----------
+const matWall = new THREE.MeshStandardMaterial({ color: 0x2a2620, roughness: 0.95 });
+const matFloor = new THREE.MeshStandardMaterial({ color: 0x141008, roughness: 0.9 });
+const matCeil = new THREE.MeshStandardMaterial({ color: 0x1a1812, roughness: 0.95 });
+const matMetal = new THREE.MeshStandardMaterial({ color: 0x444038, roughness: 0.6, metalness: 0.5 });
+const matDoor = new THREE.MeshStandardMaterial({ color: 0x5a4a3a, roughness: 0.7 });
+const matDark = new THREE.MeshStandardMaterial({ color: 0x0a0808, roughness: 1 });
+
+// ---------- Build Office ----------
+const officeGroup = new THREE.Group();
+scene.add(officeGroup);
+
+function buildOffice() {
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), matFloor);
+  floor.rotation.x = -Math.PI / 2;
+  floor.position.y = 0;
+  floor.receiveShadow = true;
+  officeGroup.add(floor);
+
+  const ceil = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), matCeil);
+  ceil.rotation.x = Math.PI / 2;
+  ceil.position.y = 3.2;
+  officeGroup.add(ceil);
+
+  const frontWall = new THREE.Mesh(new THREE.BoxGeometry(12, 3.2, 0.2), matWall);
+  frontWall.position.set(0, 1.6, -3);
+  officeGroup.add(frontWall);
+
+  const lwL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3.2, 3), matWall);
+  lwL.position.set(-4, 1.6, -1.5);
+  officeGroup.add(lwL);
+  const lwR = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3.2, 3), matWall);
+  lwR.position.set(-4, 1.6, 1.5);
+  officeGroup.add(lwR);
+  const lwT = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.8, 3), matWall);
+  lwT.position.set(-4, 2.8, 0);
+  officeGroup.add(lwT);
+
+  const rwL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3.2, 3), matWall);
+  rwL.position.set(4, 1.6, -1.5);
+  officeGroup.add(rwL);
+  const rwR = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3.2, 3), matWall);
+  rwR.position.set(4, 1.6, 1.5);
+  officeGroup.add(rwR);
+  const rwT = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.8, 3), matWall);
+  rwT.position.set(4, 2.8, 0);
+  officeGroup.add(rwT);
+
+  const backWall = new THREE.Mesh(new THREE.BoxGeometry(12, 3.2, 0.2), matWall);
+  backWall.position.set(0, 1.6, 4);
+  officeGroup.add(backWall);
+
+  const deskTop = new THREE.Mesh(new THREE.BoxGeometry(4, 0.1, 1.4), new THREE.MeshStandardMaterial({ color: 0x3a2818, roughness: 0.7 }));
+  deskTop.position.set(0, 0.95, 1.6);
+  deskTop.castShadow = true; deskTop.receiveShadow = true;
+  officeGroup.add(deskTop);
+  for (const [x, z] of [[-1.8, 1.0], [1.8, 1.0], [-1.8, 2.2], [1.8, 2.2]]) {
+    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.95, 0.1), matMetal);
+    leg.position.set(x, 0.475, z);
+    officeGroup.add(leg);
+  }
+
+  const monBody = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.6, 0.06), matMetal);
+  monBody.position.set(0, 1.35, 1.6);
+  officeGroup.add(monBody);
+  const monStand = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.18, 0.1), matMetal);
+  monStand.position.set(0, 1.06, 1.62);
+  officeGroup.add(monStand);
+  const monScreen = new THREE.Mesh(new THREE.PlaneGeometry(0.82, 0.52), new THREE.MeshBasicMaterial({ color: 0x0a1810 }));
+  monScreen.position.set(0, 1.35, 1.57);
+  officeGroup.add(monScreen);
+  const monGlow = new THREE.PointLight(0x4af0a0, 0.4, 2.5, 2);
+  monGlow.position.set(0, 1.35, 1.7);
+  officeGroup.add(monGlow);
+
+  function makePoster(color, x) {
+    const g = new THREE.Group();
+    const bg = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 1.1), new THREE.MeshStandardMaterial({ color, roughness: 0.9 }));
+    g.add(bg);
+    g.position.set(x, 1.8, -2.88);
+    g.rotation.y = Math.PI;
+    officeGroup.add(g);
+  }
+  makePoster(0x6a3a1a, -3.5);
+  makePoster(0x3a4a6a, 0);
+  makePoster(0x5a2a3a, 3.5);
+
+  function buildHall(side) {
+    const sign = side === 'left' ? -1 : 1;
+    const hf = new THREE.Mesh(new THREE.PlaneGeometry(3, 5), matFloor);
+    hf.rotation.x = -Math.PI / 2;
+    hf.position.set(sign * 5.5, 0, 0);
+    officeGroup.add(hf);
+    const hc = new THREE.Mesh(new THREE.PlaneGeometry(3, 5), matCeil);
+    hc.rotation.x = Math.PI / 2;
+    hc.position.set(sign * 5.5, 3.2, 0);
+    officeGroup.add(hc);
+    const ow = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3.2, 5), matWall);
+    ow.position.set(sign * 7, 1.6, 0);
+    officeGroup.add(ow);
+    const ew = new THREE.Mesh(new THREE.BoxGeometry(3, 3.2, 0.2), matWall);
+    ew.position.set(sign * 5.5, 1.6, -2.5);
+    officeGroup.add(ew);
+  }
+  buildHall('left');
+  buildHall('right');
+
+  const leftDoor = new THREE.Mesh(new THREE.BoxGeometry(0.18, 3.2, 2.8), matDoor);
+  leftDoor.position.set(-4, 3.2, 0);
+  leftDoor.userData.targetY = 3.2;
+  officeGroup.add(leftDoor);
+
+  const rightDoor = new THREE.Mesh(new THREE.BoxGeometry(0.18, 3.2, 2.8), matDoor);
+  rightDoor.position.set(4, 3.2, 0);
+  rightDoor.userData.targetY = 3.2;
+  officeGroup.add(rightDoor);
+
+  function makeSwitch(side) {
+    const sign = side === 'left' ? -1 : 1;
+    const sw = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.2, 0.1), new THREE.MeshStandardMaterial({ color: 0x222, emissive: 0x110000 }));
+    sw.position.set(sign * 3.85, 1.5, 0.4);
+    officeGroup.add(sw);
+    return sw;
+  }
+  makeSwitch('left'); makeSwitch('right');
+
+  return { leftDoor, rightDoor };
+}
+
+const officeDoors = buildOffice();
+
+// ---------- Animatronic Models ----------
+function makeFreddy() {
+  const g = new THREE.Group();
+  const brown = new THREE.MeshStandardMaterial({ color: 0x5a3818, roughness: 0.8 });
+  const tan = new THREE.MeshStandardMaterial({ color: 0xb08850, roughness: 0.8 });
+  const black = new THREE.MeshStandardMaterial({ color: 0x100c08, roughness: 0.9 });
+  const white = new THREE.MeshStandardMaterial({ color: 0xd0c8b0, roughness: 0.7 });
+
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.55, 1.1, 12), brown);
+  body.position.y = 1.0; body.castShadow = true;
+  g.add(body);
+  const belly = new THREE.Mesh(new THREE.SphereGeometry(0.35, 12, 8), tan);
+  belly.position.set(0, 0.85, 0.25);
+  g.add(belly);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.42, 14, 12), brown);
+  head.position.y = 1.85; head.castShadow = true;
+  g.add(head);
+  const snout = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 8), tan);
+  snout.position.set(0, 1.75, 0.35); snout.scale.set(1, 0.7, 1);
+  g.add(snout);
+  const nose = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), black);
+  nose.position.set(0, 1.85, 0.52);
+  g.add(nose);
+  for (const x of [-0.15, 0.15]) {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), white);
+    eye.position.set(x, 1.95, 0.32);
+    g.add(eye);
+    const pup = new THREE.Mesh(new THREE.SphereGeometry(0.04, 6, 5), black);
+    pup.position.set(x, 1.95, 0.4);
+    g.add(pup);
+  }
+  for (const x of [-0.3, 0.3]) {
+    const ear = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), brown);
+    ear.position.set(x, 2.25, 0);
+    g.add(ear);
+  }
+  const hatBrim = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.04, 12), black);
+  hatBrim.position.set(0, 2.28, 0);
+  g.add(hatBrim);
+  const hatTop = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.3, 12), black);
+  hatTop.position.set(0, 2.45, 0);
+  g.add(hatTop);
+  const bow = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.08, 0.06), black);
+  bow.position.set(0, 1.45, 0.42);
+  g.add(bow);
+  for (const x of [-0.55, 0.55]) {
+    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.9, 8), brown);
+    arm.position.set(x, 1.0, 0.1); arm.rotation.z = x > 0 ? 0.3 : -0.3;
+    g.add(arm);
+  }
+  for (const x of [-0.2, 0.2]) {
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.5, 8), brown);
+    leg.position.set(x, 0.25, 0);
+    g.add(leg);
+  }
+  return g;
+}
+
+function makeBonnie() {
+  const g = new THREE.Group();
+  const purple = new THREE.MeshStandardMaterial({ color: 0x6a3a8a, roughness: 0.8 });
+  const pink = new THREE.MeshStandardMaterial({ color: 0xc890c0, roughness: 0.8 });
+  const black = new THREE.MeshStandardMaterial({ color: 0x0a0610, roughness: 0.9 });
+  const red = new THREE.MeshStandardMaterial({ color: 0xd02020, roughness: 0.7 });
+  const white = new THREE.MeshStandardMaterial({ color: 0xd0c8b0, roughness: 0.7 });
+
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.52, 1.1, 12), purple);
+  body.position.y = 1.0; body.castShadow = true;
+  g.add(body);
+  const belly = new THREE.Mesh(new THREE.SphereGeometry(0.3, 12, 8), pink);
+  belly.position.set(0, 0.85, 0.25);
+  g.add(belly);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.38, 14, 12), purple);
+  head.position.y = 1.85; head.castShadow = true;
+  g.add(head);
+  const snout = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 8), pink);
+  snout.position.set(0, 1.75, 0.3); snout.scale.set(1, 0.6, 1);
+  g.add(snout);
+  const nose = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6), black);
+  nose.position.set(0, 1.82, 0.45);
+  g.add(nose);
+  for (const x of [-0.14, 0.14]) {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), red);
+    eye.position.set(x, 1.95, 0.3);
+    g.add(eye);
+    const pup = new THREE.Mesh(new THREE.SphereGeometry(0.04, 6, 5), black);
+    pup.position.set(x, 1.95, 0.38);
+    g.add(pup);
+  }
+  for (const x of [-0.18, 0.18]) {
+    const ear = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.12, 0.7, 8), purple);
+    ear.position.set(x, 2.5, -0.05);
+    g.add(ear);
+  }
+  const bow = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.08, 0.06), red);
+  bow.position.set(0, 1.45, 0.42);
+  g.add(bow);
+  for (const x of [-0.55, 0.55]) {
+    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.9, 8), purple);
+    arm.position.set(x, 1.0, 0.1); arm.rotation.z = x > 0 ? 0.3 : -0.3;
+    g.add(arm);
+  }
+  for (const x of [-0.2, 0.2]) {
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.5, 8), purple);
+    leg.position.set(x, 0.25, 0);
+    g.add(leg);
+  }
+  return g;
+}
+
+function makeChica() {
+  const g = new THREE.Group();
+  const yellow = new THREE.MeshStandardMaterial({ color: 0xe8c830, roughness: 0.8 });
+  const orange = new THREE.MeshStandardMaterial({ color: 0xe88820, roughness: 0.7 });
+  const white = new THREE.MeshStandardMaterial({ color: 0xf0e8c0, roughness: 0.7 });
+  const black = new THREE.MeshStandardMaterial({ color: 0x100c08, roughness: 0.9 });
+  const bibColor = new THREE.MeshStandardMaterial({ color: 0xf8e8a0, roughness: 0.7 });
+
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.5, 1.0, 12), yellow);
+  body.position.y = 1.0; body.castShadow = true;
+  g.add(body);
+  const bib = new THREE.Mesh(new THREE.SphereGeometry(0.36, 12, 8), bibColor);
+  bib.position.set(0, 1.0, 0.3); bib.scale.set(1, 0.9, 0.4);
+  g.add(bib);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.4, 14, 12), yellow);
+  head.position.y = 1.85; head.castShadow = true;
+  g.add(head);
+  const tuft = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.25, 6), yellow);
+  tuft.position.set(0, 2.3, 0);
+  g.add(tuft);
+  for (const x of [-0.15, 0.15]) {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), white);
+    eye.position.set(x, 1.95, 0.32);
+    g.add(eye);
+    const pup = new THREE.Mesh(new THREE.SphereGeometry(0.04, 6, 5), black);
+    pup.position.set(x, 1.95, 0.4);
+    g.add(pup);
+  }
+  const beakTop = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.2, 8), orange);
+  beakTop.position.set(0, 1.78, 0.42); beakTop.rotation.x = Math.PI / 2;
+  g.add(beakTop);
+  const beakBot = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.15, 8), orange);
+  beakBot.position.set(0, 1.68, 0.4); beakBot.rotation.x = -Math.PI / 2;
+  g.add(beakBot);
+  for (const x of [-0.55, 0.55]) {
+    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.9, 8), yellow);
+    arm.position.set(x, 1.0, 0.1); arm.rotation.z = x > 0 ? 0.3 : -0.3;
+    g.add(arm);
+  }
+  for (const x of [-0.2, 0.2]) {
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.5, 8), orange);
+    leg.position.set(x, 0.25, 0);
+    g.add(leg);
+  }
+  return g;
+}
+
+function makeFoxy() {
+  const g = new THREE.Group();
+  const red = new THREE.MeshStandardMaterial({ color: 0xa83820, roughness: 0.7 });
+  const dark = new THREE.MeshStandardMaterial({ color: 0x4a1810, roughness: 0.9 });
+  const white = new THREE.MeshStandardMaterial({ color: 0xe0d8b0, roughness: 0.7 });
+  const black = new THREE.MeshStandardMaterial({ color: 0x080404, roughness: 0.9 });
+  const gold = new THREE.MeshStandardMaterial({ color: 0xe0c040, roughness: 0.5, metalness: 0.8 });
+
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.45, 1.0, 12), red);
+  body.position.y = 1.0; body.castShadow = true;
+  g.add(body);
+  const belly = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 8), dark);
+  belly.position.set(0, 0.9, 0.25);
+  g.add(belly);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.36, 14, 12), red);
+  head.position.y = 1.85; head.scale.set(1, 1, 1.2);
+  g.add(head);
+  const snout = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.3, 8), red);
+  snout.position.set(0, 1.78, 0.45); snout.rotation.x = Math.PI / 2;
+  g.add(snout);
+  const nose = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6), black);
+  nose.position.set(0, 1.78, 0.6);
+  g.add(nose);
+  const eye1 = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 6), gold);
+  eye1.material.emissive = new THREE.Color(0xffaa00);
+  eye1.material.emissiveIntensity = 0.8;
+  eye1.position.set(-0.13, 1.98, 0.28);
+  g.add(eye1);
+  const eye2 = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 6), black);
+  eye2.position.set(0.13, 1.98, 0.28);
+  g.add(eye2);
+  const patch = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.12, 0.04), black);
+  patch.position.set(0.13, 1.98, 0.33);
+  g.add(patch);
+  for (const x of [-0.25, 0.25]) {
+    const ear = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.3, 6), red);
+    ear.position.set(x, 2.25, -0.05);
+    g.add(ear);
+  }
+  const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.8, 8), red);
+  armL.position.set(-0.5, 1.0, 0.1); armL.rotation.z = 0.3;
+  g.add(armL);
+  const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.5, 8), dark);
+  armR.position.set(0.5, 1.15, 0.1); armR.rotation.z = -0.3;
+  g.add(armR);
+  const hook = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.25, 6), gold);
+  hook.position.set(0.62, 0.85, 0.1); hook.rotation.z = Math.PI;
+  g.add(hook);
+  for (const x of [-0.2, 0.2]) {
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.5, 8), red);
+    leg.position.set(x, 0.25, 0);
+    g.add(leg);
+  }
+  return g;
+}
+
+// ---------- Build pizzeria scenes for cameras ----------
+const rooms = {};
+
+function buildShowStage() {
+  const g = new THREE.Group();
+  g.position.set(80, 0, 0);
+  const f = new THREE.Mesh(new THREE.PlaneGeometry(12, 10), matFloor); f.rotation.x = -Math.PI/2; g.add(f);
+  const c = new THREE.Mesh(new THREE.PlaneGeometry(12, 10), matCeil); c.rotation.x = Math.PI/2; c.position.y = 4; g.add(c);
+  const w1 = new THREE.Mesh(new THREE.BoxGeometry(12, 4, 0.2), matWall); w1.position.set(0, 2, -5); g.add(w1);
+  const w2 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 4, 10), matWall); w2.position.set(-6, 2, 0); g.add(w2);
+  const w3 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 4, 10), matWall); w3.position.set(6, 2, 0); g.add(w3);
+  const stage = new THREE.Mesh(new THREE.BoxGeometry(8, 0.4, 3), new THREE.MeshStandardMaterial({ color: 0x2a1810, roughness: 0.8 }));
+  stage.position.set(0, 0.2, -2); g.add(stage);
+  const curtain = new THREE.Mesh(new THREE.PlaneGeometry(12, 3), new THREE.MeshStandardMaterial({ color: 0x5a1010, roughness: 0.9, side: THREE.DoubleSide }));
+  curtain.position.set(0, 3.5, -4.9); g.add(curtain);
+  for (let i = 0; i < 8; i++) {
+    const star = new THREE.Mesh(new THREE.SphereGeometry(0.08, 6, 4), new THREE.MeshBasicMaterial({ color: 0xffd040 }));
+    star.position.set((Math.random()-0.5)*10, 2 + Math.random()*1.5, -4.85);
+    g.add(star);
+  }
+  scene.add(g);
+  rooms['1A'] = { group: g, camPos: new THREE.Vector3(0, 2.2, 3.5), camTarget: new THREE.Vector3(0, 1.4, -2), slots: { freddy: new THREE.Vector3(0, 0.4, -2), bonnie: new THREE.Vector3(-1.6, 0.4, -1.8), chica: new THREE.Vector3(1.6, 0.4, -1.8) } };
+}
+
+function buildDiningArea() {
+  const g = new THREE.Group();
+  g.position.set(120, 0, 0);
+  const f = new THREE.Mesh(new THREE.PlaneGeometry(16, 14), matFloor); f.rotation.x = -Math.PI/2; g.add(f);
+  const c = new THREE.Mesh(new THREE.PlaneGeometry(16, 14), matCeil); c.rotation.x = Math.PI/2; c.position.y = 4; g.add(c);
+  const w1 = new THREE.Mesh(new THREE.BoxGeometry(16, 4, 0.2), matWall); w1.position.set(0, 2, -7); g.add(w1);
+  const w2 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 4, 14), matWall); w2.position.set(-8, 2, 0); g.add(w2);
+  const w3 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 4, 14), matWall); w3.position.set(8, 2, 0); g.add(w3);
+  for (let i = 0; i < 6; i++) {
+    const x = -5 + (i % 3) * 5;
+    const z = -3 + Math.floor(i/3) * 5;
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 0.1, 12), new THREE.MeshStandardMaterial({ color: 0x4a2818, roughness: 0.7 }));
+    top.position.set(x, 0.8, z); g.add(top);
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.8, 8), matMetal);
+    leg.position.set(x, 0.4, z); g.add(leg);
+  }
+  for (let i = 0; i < 5; i++) {
+    const star = new THREE.Mesh(new THREE.SphereGeometry(0.15, 6, 4), new THREE.MeshBasicMaterial({ color: 0xffd040 }));
+    star.position.set(-7 + i*3.5, 2.5, -6.9);
+    g.add(star);
+  }
+  scene.add(g);
+  rooms['1B'] = { group: g, camPos: new THREE.Vector3(0, 3, 5), camTarget: new THREE.Vector3(0, 1, -3), slots: { bonnie: new THREE.Vector3(-3, 0, 0), chica: new THREE.Vector3(3, 0, -2), freddy: new THREE.Vector3(0, 0, -4) } };
+}
+
+function buildHall(side, xOff, camId) {
+  const g = new THREE.Group();
+  g.position.set(xOff, 0, 0);
+  const sign = side === 'left' ? -1 : 1;
+  const f = new THREE.Mesh(new THREE.PlaneGeometry(3, 10), matFloor); f.rotation.x = -Math.PI/2; g.add(f);
+  const c = new THREE.Mesh(new THREE.PlaneGeometry(3, 10), matCeil); c.rotation.x = Math.PI/2; c.position.y = 4; g.add(c);
+  const w1 = new THREE.Mesh(new THREE.BoxGeometry(3, 4, 0.2), matWall); w1.position.set(0, 2, -5); g.add(w1);
+  const w2 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 4, 10), matWall); w2.position.set(-1.5, 2, 0); g.add(w2);
+  const w3 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 4, 10), matWall); w3.position.set(1.5, 2, 0); g.add(w3);
+  const l = new THREE.PointLight(0x806040, 0.5, 6, 1.5); l.position.set(0, 3, 0); g.add(l);
+  scene.add(g);
+  rooms[camId] = { group: g, camPos: new THREE.Vector3(0, 2.4, 4), camTarget: new THREE.Vector3(0, 1.2, -3), slots: { bonnie: new THREE.Vector3(0, 0, -2), freddy: new THREE.Vector3(0.5, 0, -2), foxy: new THREE.Vector3(0, 0, -2) } };
+}
+
+function buildHallCorner(side, xOff, camId) {
+  const g = new THREE.Group();
+  g.position.set(xOff, 0, 0);
+  const f = new THREE.Mesh(new THREE.PlaneGeometry(4, 6), matFloor); f.rotation.x = -Math.PI/2; g.add(f);
+  const c = new THREE.Mesh(new THREE.PlaneGeometry(4, 6), matCeil); c.rotation.x = Math.PI/2; c.position.y = 4; g.add(c);
+  const w1 = new THREE.Mesh(new THREE.BoxGeometry(4, 4, 0.2), matWall); w1.position.set(0, 2, -3); g.add(w1);
+  const w2 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 4, 6), matWall); w2.position.set(-2, 2, 0); g.add(w2);
+  const w3 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 4, 6), matWall); w3.position.set(2, 2, 0); g.add(w3);
+  const l = new THREE.PointLight(0x806040, 0.4, 6, 1.5); l.position.set(0, 3, 0); g.add(l);
+  scene.add(g);
+  rooms[camId] = { group: g, camPos: new THREE.Vector3(0, 2.2, 2.5), camTarget: new THREE.Vector3(0, 1.2, -2), slots: { bonnie: new THREE.Vector3(-0.5, 0, -1.5), chica: new THREE.Vector3(0.5, 0, -1.5), freddy: new THREE.Vector3(0, 0, -1.5) } };
+}
+
+function buildPirateCove() {
+  const g = new THREE.Group();
+  g.position.set(200, 0, 0);
+  const f = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), matFloor); f.rotation.x = -Math.PI/2; g.add(f);
+  const c = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), matCeil); c.rotation.x = Math.PI/2; c.position.y = 4; g.add(c);
+  const w1 = new THREE.Mesh(new THREE.BoxGeometry(10, 4, 0.2), matWall); w1.position.set(0, 2, -5); g.add(w1);
+  const w2 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 4, 10), matWall); w2.position.set(-5, 2, 0); g.add(w2);
+  const w3 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 4, 10), matWall); w3.position.set(5, 2, 0); g.add(w3);
+  const stage = new THREE.Mesh(new THREE.BoxGeometry(4, 0.3, 3), new THREE.MeshStandardMaterial({ color: 0x2a1810 }));
+  stage.position.set(0, 0.15, -1.5); g.add(stage);
+  const curL = new THREE.Mesh(new THREE.PlaneGeometry(2, 3.5), new THREE.MeshStandardMaterial({ color: 0x5a2080, side: THREE.DoubleSide }));
+  curL.position.set(-2, 2, -1.5); g.add(curL);
+  const curR = new THREE.Mesh(new THREE.PlaneGeometry(2, 3.5), new THREE.MeshStandardMaterial({ color: 0x5a2080, side: THREE.DoubleSide }));
+  curR.position.set(2, 2, -1.5); g.add(curR);
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.6), new THREE.MeshBasicMaterial({ color: 0xc0a040 }));
+  sign.position.set(0, 1.5, -1.4); g.add(sign);
+  const l = new THREE.PointLight(0x6040a0, 0.4, 6, 1.5); l.position.set(0, 3, 0); g.add(l);
+  scene.add(g);
+  rooms['1C'] = { group: g, camPos: new THREE.Vector3(0, 2.2, 3.5), camTarget: new THREE.Vector3(0, 1, -1.5), slots: { foxy: new THREE.Vector3(0, 0.15, -1.5) } };
+}
+
+function buildBackstage() {
+  const g = new THREE.Group();
+  g.position.set(160, 0, 0);
+  const f = new THREE.Mesh(new THREE.PlaneGeometry(8, 8), matFloor); f.rotation.x = -Math.PI/2; g.add(f);
+  const c = new THREE.Mesh(new THREE.PlaneGeometry(8, 8), matCeil); c.rotation.x = Math.PI/2; c.position.y = 4; g.add(c);
+  const w1 = new THREE.Mesh(new THREE.BoxGeometry(8, 4, 0.2), matWall); w1.position.set(0, 2, -4); g.add(w1);
+  const w2 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 4, 8), matWall); w2.position.set(-4, 2, 0); g.add(w2);
+  const w3 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 4, 8), matWall); w3.position.set(4, 2, 0); g.add(w3);
+  const table = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.8, 0.8), matMetal); table.position.set(0, 0.4, -2); g.add(table);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.3, 10, 8), new THREE.MeshStandardMaterial({ color: 0x666, metalness: 0.7, roughness: 0.4 }));
+  head.position.set(0, 1.0, -2); g.add(head);
+  const l = new THREE.PointLight(0x604040, 0.4, 5, 1.5); l.position.set(0, 3, 0); g.add(l);
+  scene.add(g);
+  rooms['5'] = { group: g, camPos: new THREE.Vector3(0, 2.2, 3), camTarget: new THREE.Vector3(0, 1, -2), slots: { bonnie: new THREE.Vector3(-1.5, 0, 0) } };
+}
+
+function buildKitchen() {
+  const g = new THREE.Group();
+  g.position.set(180, 0, 0);
+  const f = new THREE.Mesh(new THREE.PlaneGeometry(8, 8), matFloor); f.rotation.x = -Math.PI/2; g.add(f);
+  const c = new THREE.Mesh(new THREE.PlaneGeometry(8, 8), matCeil); c.rotation.x = Math.PI/2; c.position.y = 4; g.add(c);
+  const w1 = new THREE.Mesh(new THREE.BoxGeometry(8, 4, 0.2), matWall); w1.position.set(0, 2, -4); g.add(w1);
+  const w2 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 4, 8), matWall); w2.position.set(-4, 2, 0); g.add(w2);
+  const w3 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 4, 8), matWall); w3.position.set(4, 2, 0); g.add(w3);
+  const counter = new THREE.Mesh(new THREE.BoxGeometry(3, 0.9, 0.7), matMetal); counter.position.set(0, 0.45, -3.5); g.add(counter);
+  const l = new THREE.PointLight(0x301010, 0.15, 4, 1.5); l.position.set(0, 3, 0); g.add(l);
+  scene.add(g);
+  rooms['6'] = { group: g, camPos: new THREE.Vector3(0, 2.2, 3), camTarget: new THREE.Vector3(0, 1, -2), slots: { chica: new THREE.Vector3(0, 0, -1) } };
+}
+
+function buildSupplyCloset() {
+  const g = new THREE.Group();
+  g.position.set(220, 0, 0);
+  const f = new THREE.Mesh(new THREE.PlaneGeometry(5, 5), matFloor); f.rotation.x = -Math.PI/2; g.add(f);
+  const c = new THREE.Mesh(new THREE.PlaneGeometry(5, 5), matCeil); c.rotation.x = Math.PI/2; c.position.y = 3.5; g.add(c);
+  const w1 = new THREE.Mesh(new THREE.BoxGeometry(5, 3.5, 0.2), matWall); w1.position.set(0, 1.75, -2.5); g.add(w1);
+  const w2 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3.5, 5), matWall); w2.position.set(-2.5, 1.75, 0); g.add(w2);
+  const w3 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3.5, 5), matWall); w3.position.set(2.5, 1.75, 0); g.add(w3);
+  const box = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.8), new THREE.MeshStandardMaterial({ color: 0x4a3018 })); box.position.set(-1, 0.4, -1); g.add(box);
+  const l = new THREE.PointLight(0x604040, 0.3, 4, 1.5); l.position.set(0, 2.8, 0); g.add(l);
+  scene.add(g);
+  rooms['7'] = { group: g, camPos: new THREE.Vector3(0, 1.8, 2), camTarget: new THREE.Vector3(0, 1, -1.5), slots: { bonnie: new THREE.Vector3(0, 0, -1) } };
+}
+
+buildShowStage();
+buildDiningArea();
+buildPirateCove();
+buildBackstage();
+buildKitchen();
+buildSupplyCloset();
+buildHall('left', 100, '2A');
+buildHall('right', 140, '4A');
+buildHallCorner('left', 110, '2B');
+buildHallCorner('right', 150, '4B');
+
+// ---------- Camera definitions ----------
+const CAMERAS = [
+  { id: '1A', name: 'Show Stage' },
+  { id: '1B', name: 'Dining Area' },
+  { id: '1C', name: 'Pirate Cove' },
+  { id: '5',  name: 'Backstage' },
+  { id: '6',  name: 'Kitchen' },
+  { id: '7',  name: 'Supply Closet' },
+  { id: '2A', name: 'West Hall' },
+  { id: '2B', name: 'W. Hall Corner' },
+  { id: '4A', name: 'East Hall' },
+  { id: '4B', name: 'E. Hall Corner' }
+];
+
+// ---------- Animatronics ----------
+const animatronics = {
+  freddy: {
+    name: 'Freddy', mesh: makeFreddy(), cam: '1A', path: ['1A','1B','7','6','4A','4B','office-right'],
+    moveInterval: 5.0, lastMove: 0, difficulty: 0.05, atDoor: false, doorSide: null, attacking: false
+  },
+  bonnie: {
+    name: 'Bonnie', mesh: makeBonnie(), cam: '1A', path: ['1A','5','1B','2A','2B','office-left'],
+    moveInterval: 4.5, lastMove: 0, difficulty: 0.1, atDoor: false, doorSide: null, attacking: false
+  },
+  chica: {
+    name: 'Chica', mesh: makeChica(), cam: '1A', path: ['1A','1B','6','4A','4B','office-right'],
+    moveInterval: 4.8, lastMove: 0, difficulty: 0.08, atDoor: false, doorSide: null, attacking: false
+  },
+  foxy: {
+    name: 'Foxy', mesh: makeFoxy(), cam: '1C', path: ['1C','1C','1C','1C','2A','office-left-charge'],
+    moveInterval: 5.5, lastMove: 0, difficulty: 0.06, atDoor: false, doorSide: null, attacking: false, foxyStage: 0
+  }
+};
+
+function placeAnimatronic(a) {
+  if (a.cam.startsWith('office')) return;
+  const room = rooms[a.cam];
+  if (!room) return;
+  const slot = room.slots[a.name.toLowerCase()] || room.slots[Object.keys(room.slots)[0]];
+  if (slot) {
+    a.mesh.position.copy(slot).add(room.group.position);
+    a.mesh.rotation.y = Math.PI;
+  }
+}
+Object.values(animatronics).forEach(a => { scene.add(a.mesh); placeAnimatronic(a); });
+
+// ---------- Game state ----------
+const state = {
+  playing: false,
+  inCams: false,
+  currentCam: '1A',
+  power: 100,
+  leftDoorClosed: false,
+  rightDoorClosed: false,
+  leftLightOn: false,
+  rightLightOn: false,
+  time: 0,
+  night: 1,
+  nightStartTime: 0,
+  usage: 1,
+  lastFrame: performance.now(),
+  officeLook: 0,
+  jumpscareActive: false,
+  currentJumpscare: null,
+  highestNight: parseInt(localStorage.getItem('fnaf3d-progress') || '1', 10)
+};
+
+// ---------- UI elements ----------
+const el = (id) => document.getElementById(id);
+const powerText = el('power-text'), powerBar = el('power-bar'), usageText = el('usage-text');
+const nightText = el('night-text'), timeText = el('time-text');
+const camPanel = el('cam-panel'), camGrid = el('cam-grid'), camTitle = el('cam-title');
+const hudTop = el('hud-top'), controls = el('controls');
+const menu = el('menu'), result = el('result'), nightIntro = el('night-intro');
+const jumpscareDiv = el('jumpscare'), jumpscareCanvas = el('jumpscare-canvas');
+const lightLeft = el('light-left'), lightRight = el('light-right');
+
+// ---------- Build camera grid ----------
+CAMERAS.forEach(c => {
+  const btn = document.createElement('div');
+  btn.className = 'cam-btn';
+  btn.dataset.cam = c.id;
+  btn.innerHTML = `<span class="cam-dot"></span>CAM ${c.id}<br><span style="font-size:8px;opacity:0.7">${c.name}</span>`;
+  btn.addEventListener('click', () => switchCamera(c.id));
+  camGrid.appendChild(btn);
+});
+
+// ---------- Camera switching ----------
+function switchCamera(camId) {
+  state.currentCam = camId;
+  const cam = CAMERAS.find(c => c.id === camId);
+  if (cam) camTitle.textContent = `CAM ${cam.id} — ${cam.name.toUpperCase()}`;
+  document.querySelectorAll('.cam-btn').forEach(b => b.classList.toggle('active', b.dataset.cam === camId));
+  const room = rooms[camId];
+  if (room) {
+    camera.position.copy(room.camPos).add(room.group.position);
+    camera.lookAt(room.camTarget.clone().add(room.group.position));
+  }
+  updateCamButtons();
+}
+
+function toggleCams() {
+  if (!state.playing) return;
+  state.inCams = !state.inCams;
+  camPanel.classList.toggle('active', state.inCams);
+  el('btn-cam').classList.toggle('active', state.inCams);
+  document.querySelectorAll('#controls .ctrl-group:not(.cam-group)').forEach(g => {
+    g.style.display = state.inCams ? 'none' : 'flex';
+  });
+  document.body.classList.toggle('scanlines', state.inCams);
+  if (state.inCams) {
+    switchCamera(state.currentCam);
+  } else {
+    camera.position.set(0, 1.5, 0);
+    camera.lookAt(0, 1.5, -3);
+  }
+}
+
+el('btn-cam').addEventListener('click', toggleCams);
+el('cam-exit').addEventListener('click', toggleCams);
+
+// ---------- Door & light controls ----------
+const leftDoorLight = new THREE.PointLight(0xfff0c0, 0, 7, 1.5);
+leftDoorLight.position.set(-4.5, 2.5, 0.5);
+scene.add(leftDoorLight);
+const rightDoorLight = new THREE.PointLight(0xfff0c0, 0, 7, 1.5);
+rightDoorLight.position.set(4.5, 2.5, 0.5);
+scene.add(rightDoorLight);
+
+function toggleLeftDoor() {
+  if (!state.playing) return;
+  state.leftDoorClosed = !state.leftDoorClosed;
+  el('btn-left-door').classList.toggle('active', state.leftDoorClosed);
+  officeDoors.leftDoor.userData.targetY = state.leftDoorClosed ? 1.6 : 3.2;
+  if (state.leftDoorClosed) {
+    Object.values(animatronics).forEach(a => {
+      if (a.doorSide === 'left' && a.atDoor) retreatAnimatronic(a);
+    });
+  }
+}
+function toggleRightDoor() {
+  if (!state.playing) return;
+  state.rightDoorClosed = !state.rightDoorClosed;
+  el('btn-right-door').classList.toggle('active', state.rightDoorClosed);
+  officeDoors.rightDoor.userData.targetY = state.rightDoorClosed ? 1.6 : 3.2;
+  if (state.rightDoorClosed) {
+    Object.values(animatronics).forEach(a => {
+      if (a.doorSide === 'right' && a.atDoor) retreatAnimatronic(a);
+    });
+  }
+}
+function toggleLeftLight() {
+  if (!state.playing) return;
+  state.leftLightOn = !state.leftLightOn;
+  el('btn-left-light').classList.toggle('active', state.leftLightOn);
+  lightLeft.classList.toggle('on', state.leftLightOn);
+  leftDoorLight.intensity = state.leftLightOn ? 1.5 : 0;
+  if (state.leftLightOn) {
+    clearTimeout(state._leftLightTimer);
+    state._leftLightTimer = setTimeout(() => { if (state.leftLightOn) toggleLeftLight(); }, 2500);
+  }
+}
+function toggleRightLight() {
+  if (!state.playing) return;
+  state.rightLightOn = !state.rightLightOn;
+  el('btn-right-light').classList.toggle('active', state.rightLightOn);
+  lightRight.classList.toggle('on', state.rightLightOn);
+  rightDoorLight.intensity = state.rightLightOn ? 1.5 : 0;
+  if (state.rightLightOn) {
+    clearTimeout(state._rightLightTimer);
+    state._rightLightTimer = setTimeout(() => { if (state.rightLightOn) toggleRightLight(); }, 2500);
+  }
+}
+
+el('btn-left-door').addEventListener('click', toggleLeftDoor);
+el('btn-right-door').addEventListener('click', toggleRightDoor);
+el('btn-left-light').addEventListener('click', toggleLeftLight);
+el('btn-right-light').addEventListener('click', toggleRightLight);
+
+// ---------- Office view pan (touch / mouse) ----------
+let panStart = null, panStartLook = 0;
+function onPanStart(x) {
+  if (state.inCams) return;
+  panStart = x;
+  panStartLook = state.officeLook;
+}
+function onPanMove(x) {
+  if (panStart === null || state.inCams) return;
+  const dx = (x - panStart) / window.innerWidth;
+  state.officeLook = Math.max(-1, Math.min(1, panStartLook + dx * 1.6));
+}
+function onPanEnd() { panStart = null; }
+
+canvas.addEventListener('touchstart', (e) => { if (e.touches.length === 1) onPanStart(e.touches[0].clientX); }, { passive: true });
+canvas.addEventListener('touchmove', (e) => { if (e.touches.length === 1) onPanMove(e.touches[0].clientX); }, { passive: true });
+canvas.addEventListener('touchend', onPanEnd, { passive: true });
+let mouseDown = false;
+canvas.addEventListener('mousedown', (e) => { mouseDown = true; onPanStart(e.clientX); });
+canvas.addEventListener('mousemove', (e) => { if (mouseDown) onPanMove(e.clientX); });
+window.addEventListener('mouseup', () => { mouseDown = false; onPanEnd(); });
+
+// ---------- Animatronic AI ----------
+function getNightDifficulty() {
+  const m = [0, 0.5, 0.8, 1.0, 1.4, 1.8, 2.2, 2.5];
+  return m[Math.min(state.night, 7)] || 2.5;
+}
+
+function updateAnimatronics(now) {
+  if (!state.playing || state.jumpscareActive) return;
+  Object.values(animatronics).forEach(a => {
+    if (a.attacking) return;
+    const interval = a.moveInterval / getNightDifficulty();
+    if (now - a.lastMove < interval * 1000) return;
+    a.lastMove = now;
+    if (Math.random() > a.difficulty * 3) return;
+    if (a.name === 'Foxy') { handleFoxyMove(a); return; }
+    const idx = a.path.indexOf(a.cam);
+    if (idx === -1) { a.cam = a.path[0]; placeAnimatronic(a); return; }
+    if (idx >= a.path.length - 1) return;
+    const nextLoc = a.path[idx + 1];
+    if (nextLoc.startsWith('office')) {
+      const side = nextLoc.includes('left') ? 'left' : 'right';
+      a.doorSide = side;
+      a.atDoor = true;
+      a.cam = nextLoc;
+      const sign = side === 'left' ? -1 : 1;
+      a.mesh.position.set(sign * 4.3, 0, -0.5);
+      a.mesh.rotation.y = side === 'left' ? Math.PI/2 : -Math.PI/2;
+      const doorClosed = side === 'left' ? state.leftDoorClosed : state.rightDoorClosed;
+      if (doorClosed) {
+        setTimeout(() => retreatAnimatronic(a), 800);
+      } else {
+        setTimeout(() => {
+          if (a.atDoor && !state.jumpscareActive) {
+            const stillClosed = side === 'left' ? state.leftDoorClosed : state.rightDoorClosed;
+            if (!stillClosed) triggerJumpscare(a);
+            else retreatAnimatronic(a);
+          }
+        }, 1500 + Math.random() * 1500);
+      }
+    } else {
+      a.cam = nextLoc;
+      placeAnimatronic(a);
+    }
+  });
+}
+
+function handleFoxyMove(a) {
+  a.foxyStage++;
+  if (a.foxyStage < 4) {
+    const offsets = [0, 0.5, 1.0, 1.5];
+    const room = rooms['1C'];
+    a.mesh.position.copy(room.slots.foxy).add(room.group.position);
+    a.mesh.position.x += offsets[a.foxyStage] * 0.3;
+    return;
+  }
+  a.cam = 'office-left-charge';
+  a.attacking = true;
+  a.doorSide = 'left';
+  a.atDoor = true;
+  a.mesh.position.set(-5, 0, 0);
+  a.mesh.rotation.y = Math.PI/2;
+  setTimeout(() => {
+    if (state.leftDoorClosed) {
+      state.power = Math.max(0, state.power - 5);
+      retreatAnimatronic(a);
+      a.foxyStage = 0;
+      a.attacking = false;
+      placeAnimatronic(a);
+    } else {      triggerJumpscare(a);
+    }
+  }, 1000);
+}
+
+function retreatAnimatronic(a) {
+  a.cam = a.path[0];
+  a.atDoor = false;
+  a.doorSide = null;
+  a.attacking = false;
+  if (a.name === 'Foxy') a.foxyStage = 0;
+  placeAnimatronic(a);
+}
+
+function updateCamButtons() {
+  document.querySelectorAll('.cam-btn').forEach(b => {
+    const camId = b.dataset.cam;
+    const hasAnim = Object.values(animatronics).some(a => a.cam === camId);
+    b.classList.toggle('has-anim', hasAnim);
+  });
+}
+
+// ---------- Power management ----------
+function updatePower(dt) {
+  if (!state.playing) return;
+  let usage = 1;
+  if (state.leftDoorClosed) usage++;
+  if (state.rightDoorClosed) usage++;
+  if (state.inCams) usage++;
+  if (state.leftLightOn) usage++;
+  if (state.rightLightOn) usage++;
+  state.usage = usage;
+  const drainPerSec = 0.07 + (usage - 1) * 0.15;
+  state.power -= drainPerSec * dt;
+  if (state.power <= 0) {
+    state.power = 0;
+    powerOut();
+  }
+  powerText.textContent = Math.ceil(state.power) + '%';
+  powerBar.style.width = state.power + '%';
+  usageText.textContent = 'USAGE: ' + usage;
+  if (state.power < 25) powerText.style.color = '#ff6040';
+  else if (state.power < 50) powerText.style.color = '#ffc040';
+  else powerText.style.color = '#e8d8b0';
+}
+
+function powerOut() {
+  state.leftDoorClosed = false;
+  state.rightDoorClosed = false;
+  state.leftLightOn = false;
+  state.rightLightOn = false;
+  state.inCams = false;
+  camPanel.classList.remove('active');
+  el('btn-cam').classList.remove('active');
+  el('btn-left-door').classList.remove('active');
+  el('btn-right-door').classList.remove('active');
+  el('btn-left-light').classList.remove('active');
+  el('btn-right-light').classList.remove('active');
+  lightLeft.classList.remove('on');
+  lightRight.classList.remove('on');
+  document.body.classList.remove('scanlines');
+  officeDoors.leftDoor.userData.targetY = 3.2;
+  officeDoors.rightDoor.userData.targetY = 3.2;
+  deskLight.intensity = 0.1;
+  setTimeout(() => {
+    if (!state.jumpscareActive && state.playing) triggerJumpscare(animatronics.freddy);
+  }, 3000 + Math.random() * 5000);
+}
+
+// ---------- Time / night progression ----------
+function updateTime(dt) {
+  if (!state.playing) return;
+  const nightDuration = 360;
+  state.time = ((performance.now() - state.nightStartTime) / 1000 / nightDuration) * 6;
+  if (state.time >= 6) { winNight(); return; }
+  const hour = Math.floor(state.time);
+  const displayHour = hour === 0 ? 12 : hour;
+  timeText.textContent = displayHour + ' AM';
+}
+
+function winNight() {
+  if (!state.playing) return;
+  state.playing = false;
+  state.inCams = false;
+  camPanel.classList.remove('active');
+  document.body.classList.remove('scanlines');
+  if (state.night >= state.highestNight) {
+    state.highestNight = Math.min(state.night + 1, 7);
+    localStorage.setItem('fnaf3d-progress', state.highestNight);
+  }
+  timeText.textContent = '6 AM';
+  setTimeout(() => {
+    result.className = 'win';
+    result.classList.add('active');
+    el('result-title').textContent = '6:00 AM';
+    el('result-title').style.color = '#4caf50';
+    el('result-text').textContent = state.night >= 5 ? 'You completed Night 5. The week is over... you survived.' : `Night ${state.night} complete. Night ${state.night + 1} awaits.`;
+    el('btn-result-continue').textContent = state.night >= 5 ? 'MAIN MENU' : `CONTINUE TO NIGHT ${state.night + 1}`;
+  }, 1500);
+}
+
+// ---------- Jumpscare ----------
+function triggerJumpscare(a) {
+  if (state.jumpscareActive) return;
+  state.jumpscareActive = true;
+  state.playing = false;
+  state.inCams = false;
+  camPanel.classList.remove('active');
+  document.body.classList.remove('scanlines');
+  jumpscareDiv.classList.add('active');
+  state.currentJumpscare = a;
+  setupJumpscareScene(a);
+  playScreech();
+  setTimeout(() => {
+    jumpscareDiv.classList.remove('active');
+    stopJumpscareScene();
+    result.className = 'lose';
+    result.classList.add('active');
+    el('result-title').textContent = 'GAME OVER';
+    el('result-title').style.color = '#c02020';
+    el('result-text').textContent = `${a.name} got you. The night ends here.`;
+    el('btn-result-continue').textContent = 'TRY AGAIN';
+  }, 2200);
+}
+
+let jumpscareRenderer, jumpscareScene, jumpscareCamera, jumpscareAnimId;
+function setupJumpscareScene(a) {
+  jumpscareRenderer = new THREE.WebGLRenderer({ canvas: jumpscareCanvas, antialias: true });
+  jumpscareRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  jumpscareRenderer.setSize(window.innerWidth, window.innerHeight);
+  jumpscareScene = new THREE.Scene();
+  jumpscareScene.background = new THREE.Color(0x000000);
+  jumpscareCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.05, 50);
+  jumpscareCamera.position.set(0, 0, 2);
+
+  const amb = new THREE.AmbientLight(0x888888, 0.5);
+  jumpscareScene.add(amb);
+  const key = new THREE.PointLight(0xff4040, 2, 10, 1.5);
+  key.position.set(2, 2, 3);
+  jumpscareScene.add(key);
+
+  const clone = a.mesh.clone();
+  clone.position.set(0, 0, 0);
+  clone.rotation.set(0, 0, 0);
+  clone.traverse(o => { if (o.isMesh) o.castShadow = false; });
+  jumpscareScene.add(clone);
+  jumpscareScene.userData.clone = clone;
+
+  const start = performance.now();
+  function animate() {
+    jumpscareAnimId = requestAnimationFrame(animate);
+    const t = (performance.now() - start) / 1000;
+    clone.rotation.z = Math.sin(t * 40) * 0.15;
+    clone.position.x = Math.sin(t * 35) * 0.2;
+    clone.position.y = Math.cos(t * 38) * 0.15;
+    const scale = 1 + Math.sin(t * 25) * 0.1;
+    clone.scale.set(scale, scale, scale);
+    jumpscareRenderer.render(jumpscareScene, jumpscareCamera);
+  }
+  animate();
+}
+
+function stopJumpscareScene() {
+  if (jumpscareAnimId) cancelAnimationFrame(jumpscareAnimId);
+  jumpscareAnimId = null;
+}
+
+// ---------- Audio (synth via WebAudio) ----------
+let audioCtx = null;
+function getAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function playScreech() {
+  try {
+    const ctx = getAudio();
+    const dur = 1.8;
+    const buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const gain = ctx.createGain();
+    gain.gain.value = 0.8;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 1500;
+    filter.Q.value = 0.5;
+    src.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+    src.start();
+    const osc = ctx.createOscillator();
+    osc.frequency.value = 80;
+    osc.type = 'sawtooth';
+    const og = ctx.createGain(); og.gain.value = 0.4;
+    osc.connect(og); og.connect(ctx.destination);
+    osc.start(); osc.stop(ctx.currentTime + dur);
+  } catch (e) {}
+}
+function playAmbient() {
+  try {
+    const ctx = getAudio();
+    const osc = ctx.createOscillator();
+    osc.frequency.value = 55;
+    osc.type = 'sine';
+    const g = ctx.createGain(); g.gain.value = 0.04;
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start();
+    state.ambientOsc = osc;
+    state.ambientGain = g;
+  } catch (e) {}
+}
+function stopAmbient() {
+  if (state.ambientOsc) { try { state.ambientOsc.stop(); } catch (e) {} state.ambientOsc = null; }
+}
+
+// ---------- Game flow ----------
+function startNight(n) {
+  state.night = n;
+  state.playing = true;
+  state.jumpscareActive = false;
+  state.inCams = false;
+  state.power = 100;
+  state.leftDoorClosed = false; state.rightDoorClosed = false;
+  state.leftLightOn = false; state.rightLightOn = false;
+  state.time = 0;
+  state.nightStartTime = performance.now();
+  state.officeLook = 0;
+  nightText.textContent = n;
+  timeText.textContent = '12 AM';
+
+  Object.values(animatronics).forEach(a => {
+    a.cam = a.path[0];
+    a.atDoor = false; a.doorSide = null; a.attacking = false;
+    a.lastMove = performance.now() + 3000;
+    if (a.name === 'Foxy') a.foxyStage = 0;
+    placeAnimatronic(a);
+  });
+
+  menu.style.display = 'none';
+  result.classList.remove('active');
+  hudTop.style.display = 'flex';
+  controls.style.display = 'flex';
+  camPanel.classList.remove('active');
+  document.body.classList.remove('scanlines');
+  el('btn-left-door').classList.remove('active');
+  el('btn-right-door').classList.remove('active');
+  el('btn-left-light').classList.remove('active');
+  el('btn-right-light').classList.remove('active');
+  lightLeft.classList.remove('on');
+  lightRight.classList.remove('on');
+  deskLight.intensity = 1.2;
+
+  camera.position.set(0, 1.5, 0);
+  camera.lookAt(0, 1.5, -3);
+
+  el('night-intro-num').textContent = n;
+  nightIntro.classList.add('active');
+  setTimeout(() => {
+    nightIntro.classList.remove('active');
+    playAmbient();
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  }, 2200);
+}
+
+el('btn-start').addEventListener('click', () => { getAudio(); startNight(1); });
+el('btn-continue').addEventListener('click', () => { getAudio(); startNight(state.highestNight); });
+el('btn-result-continue').addEventListener('click', () => {
+  if (result.classList.contains('win')) {
+    if (state.night >= 5) {
+      result.classList.remove('active');
+      menu.style.display = 'flex';
+      hudTop.style.display = 'none';
+      controls.style.display = 'none';
+      stopAmbient();
+    } else {
+      startNight(state.night + 1);
+    }
+  } else {
+    startNight(state.night);
+  }
+});
+
+if (state.highestNight > 1) {
+  el('btn-continue').style.display = 'inline-block';
+  el('continue-night').textContent = state.highestNight;
+}
+
+// ---------- Resize ----------
+function onResize() {
+  const w = window.innerWidth, h = window.innerHeight;
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h);
+  if (jumpscareRenderer) {
+    jumpscareRenderer.setSize(w, h);
+    jumpscareCamera.aspect = w / h;
+    jumpscareCamera.updateProjectionMatrix();
+  }
+}
+window.addEventListener('resize', onResize);
+window.addEventListener('orientationchange', () => setTimeout(onResize, 200));
+
+// ---------- Render loop ----------
+function animate() {
+  requestAnimationFrame(animate);
+  const now = performance.now();
+  const dt = Math.min(0.1, (now - state.lastFrame) / 1000);
+  state.lastFrame = now;
+
+  ['leftDoor', 'rightDoor'].forEach(k => {
+    const d = officeDoors[k];
+    d.position.y += (d.userData.targetY - d.position.y) * 0.18;
+  });
+
+  if (state.playing && !state.inCams) {
+    const targetX = state.officeLook * 1.8;
+    const targetRotY = state.officeLook * 1.1;
+    camera.position.x += (targetX - camera.position.x) * 0.1;
+    camera.rotation.y += (-targetRotY - camera.rotation.y) * 0.1;
+  }
+
+  if (state.inCams && state.playing) {
+    camera.position.x += (Math.random() - 0.5) * 0.01;
+    camera.position.y += (Math.random() - 0.5) * 0.01;
+  }
+
+  Object.values(animatronics).forEach(a => {
+    if (a.mesh && !a.attacking) {
+      a.mesh.children.forEach((c, i) => {
+        if (c.position) c.position.y += Math.sin(now * 0.001 + i) * 0.0005;
+      });
+    }
+  });
+
+  if (state.playing && !state.jumpscareActive) {
+    updatePower(dt);
+    updateTime(dt);
+    updateAnimatronics(now);
+    updateCamButtons();
+  }
+
+  if (!state.jumpscareActive) {
+    renderer.render(scene, camera);
+  }
+}
+
+// ---------- Initialize ----------
+onResize();
+camera.position.set(0, 1.5, 0);
+camera.lookAt(0, 1.5, -3);
+
+el('loading').style.display = 'none';
+
+animate();
+</script>
+</body>
+</html>
